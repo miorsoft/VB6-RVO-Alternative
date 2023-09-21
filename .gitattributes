@@ -19,6 +19,7 @@
 *.txt    eol=crlf
 *.vbp    eol=crlf
 
+
 # Standard to msysgit
 *.doc	 diff=astextplain
 *.DOC	 diff=astextplain
@@ -30,3 +31,5 @@
 *.PDF	 diff=astextplain
 *.rtf	 diff=astextplain
 *.RTF diff=astextplain
+
+
