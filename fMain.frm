@@ -21,11 +21,7 @@ Private Sub Form_Activate()
     MAINLOOP
 End Sub
  
- 
-Private Sub Form_Click()
-    MODE = MODE + 1
-    If MODE > 4 Then MODE = 0
-End Sub
+
 
 Private Sub Form_Load()
     ScaleMode = vbPixels
@@ -38,6 +34,11 @@ Private Sub Form_Load()
 End Sub
 
 Private Sub Form_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    If Button = 1 Then
+        MODE = MODE + 1
+        If MODE > 4 Then MODE = 0
+    End If
+
     If Button = 2 Then
         If FOLLOW = 0 Then FOLLOWworst: Exit Sub
         If FOLLOW > 1 Then FOLLOW = 1: Exit Sub
