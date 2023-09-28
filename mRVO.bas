@@ -7,10 +7,10 @@ Public Type tAgent
     Y             As Double
     VX            As Double
     VY            As Double
-    nVX           As Double
+    nVX           As Double 'Normalized Vel
     nVY           As Double
 
-    TX            As Double
+    TX            As Double 'Target Position
     TY            As Double
     VXchange      As Double
     VYchange      As Double
@@ -28,14 +28,14 @@ Public Type tAgent
     SciaX()       As Double
     SciaY()       As Double
 
-    ShoulderX     As Double
+    ShoulderX     As Double 'Shoulder/Chest direction
     ShoulderY     As Double
 
     Avoidance     As Double
 
     NReachedTargets As Long
 
-    Walked        As Double
+    Walked        As Double 'Walked Distance
 
 End Type
 
@@ -56,24 +56,24 @@ Public ScreenH    As Double
 Public SRF        As cCairoSurface
 Public CC         As cCairoContext
 
-Private Const GlobMaxSpeed As Double = 1  '0.52
+Private Const GlobMaxSpeed As Double = 1    '0.52
 Private Const GlobMaxSpeed2 As Double = GlobMaxSpeed * GlobMaxSpeed
 
-Public GRID      As cSpatialGrid
+Public GRID       As cSpatialGrid
 
 Public doloop     As Boolean
 
 Private CNT       As Long
 
-Private Const ControlDist As Double = 14 '16 '15 ' 14
+Private Const ControlDist As Double = 14    '16 '15 ' 14
 Private Const ControlDist2 As Double = ControlDist * ControlDist
 Private Const invControlDist As Double = 1 / ControlDist
 
-Public Const VMUL As Double = 17 '15 '16 ' 17
+Public Const VMUL As Double = 17  '15 '16 ' 17
 
 Public Const GridSize As Double = 2 * GlobMaxSpeed * VMUL + ControlDist    '40    '35 '25
 
-Private Const VelChangeGlobStrngth As Double = 0.2 ' 0.2 '0.2    'con MaxV
+Private Const VelChangeGlobStrngth As Double = 0.2    ' 0.2 '0.2    'con MaxV
 
 Public MODE       As Long
 Public FOLLOW     As Long
@@ -81,12 +81,13 @@ Public FOLLOW     As Long
 Private Const Zoom As Double = 1.3    '1.4
 Private Const InvZOOM As Double = 1 / Zoom
 
-Private Const minAvoid As Double = 0.5 '25 '0.2
+Private Const minAvoid As Double = 0.5    '25 '0.2
 Private Const OneMinusMinAvoid As Double = 1 - minAvoid
 
-Private TargARR() As tVec3
-Private NTar As Long
-Private AgTar() As Long
+' FOR MODE 6
+Private ArrayOfTargets() As tVec3
+Private NTargets      As Long
+Private AgentTarget()   As Long
 
 
 
@@ -110,7 +111,7 @@ Public Sub Init_RVO(NAG As Long)
 
             .maxV = GlobMaxSpeed * (0.55 + 0.45 * Rnd)
             If Rnd < 0.01 Then .maxV = 0.2 * GlobMaxSpeed
-            
+
             .maxV2 = .maxV * .maxV
 
             .Avoidance = minAvoid + OneMinusMinAvoid * Rnd
@@ -267,16 +268,14 @@ Public Sub DRAW()
 
 End Sub
 Private Sub CalShoulders()
+
+'Compute Shoulder/chest/arm direction by smoothing Normalized Velocity
     Dim I         As Long
     Dim D#, DX#, DY#
     Dim ANG#
     For I = 1 To NA
         With Agent(I)
             ' SHOULDERS-----
-            '            ANG = Atan2(.VX, .VY)
-            '            .nVX = Cos(ANG)
-            '            .nVY = Sin(ANG)
-
             D = Sqr(.VX * .VX + .VY * .VY)
             .Walked = .Walked + D
             If D Then
@@ -330,50 +329,47 @@ Public Sub draw_CAMERA()
 
 
     CalShoulders
-    Ncap = 0
-    For I = 1 To NA
-        BUILDH I
-    Next
+    NCapsulesInScreen = 0
+    For I = 1 To NA: BUILDHuman I: Next
 
-    If Ncap Then QuickSortCapsules CAP(), 1, Ncap
+    If NCapsulesInScreen Then QuickSortCapsules CAPSULES(), 1, NCapsulesInScreen
 
 
     CC.SetSourceRGB 0.12, 0.2, 0.12: CC.Paint
 
 
-'--------- GIRD
-CC.SetLineWidth 1.5
-CC.SetSourceRGB 0.25, 0.25, 0.25
-'....................................
-For DX = 0 To WorldW Step GridSize
-CAM.LineToScreen vec3(DX, 0, 0), vec3(DX, 0, WorldH), R1, R2, Vis
-If Vis Then
+    '--------- GIRD
+    CC.SetLineWidth 1.5
+    CC.SetSourceRGB 0.25, 0.25, 0.25
+    '....................................
+    For DX = 0 To WorldW Step GridSize
+        CAM.LineToScreen vec3(DX, 0, 0), vec3(DX, 0, WorldH), R1, R2, Vis
+        If Vis Then
             CC.MoveTo R1.X, R1.Y
             CC.LineTo R2.X, R2.Y
             CC.Stroke
-            End If
-Next
-For DY = 0 To WorldH Step GridSize
-CAM.LineToScreen vec3(0, 0, DY), vec3(WorldW, 0, DY), R1, R2, Vis
-If Vis Then
+        End If
+    Next
+    For DY = 0 To WorldH Step GridSize
+        CAM.LineToScreen vec3(0, 0, DY), vec3(WorldW, 0, DY), R1, R2, Vis
+        If Vis Then
             CC.MoveTo R1.X, R1.Y
             CC.LineTo R2.X, R2.Y
             CC.Stroke
-            End If
-Next
-'-----------------------------
+        End If
+    Next
+    '-----------------------------
 
 
 
     Kcam = ScreenW * 0.00072
 
 
-
     ' BODYS
-    For I = 1 To Ncap
-        With CAP(I)
-            If .idxA > 0 Then
-                CC.SetSourceRGB Agent(.idxA).cR, Agent(.idxA).cG, Agent(.idxA).cB
+    For I = 1 To NCapsulesInScreen
+        With CAPSULES(I)
+            If .AgentIndex > 0 Then
+                CC.SetSourceRGB Agent(.AgentIndex).cR, Agent(.AgentIndex).cG, Agent(.AgentIndex).cB
                 MUL = 400
             Else                  'shadow
 
@@ -404,37 +400,14 @@ Public Sub MOVE()
     For I = 1 To NA
         With Agent(I)
 
-            ''--------- Limitazione sterzo
-            ''            DX = .VX: DY = .VY
-            ''            D = (DX * DX + DY * DY)
-            ''            If D Then D = 1 / Sqr(D)
-            ''            DX = DX * D
-            ''            DY = DY * D
-            ''            DX2 = .VXchange: DY2 = .VYchange
-            ''            D2 = (DX2 * DX2 + DY2 * DY2)
-            ''            If D2 Then D2 = 1 / Sqr(D2)
-            ''            DX2 = DX2 * D2
-            ''            DY2 = DY2 * D2
-            ''
-            ''            D = -(DX * DX2 + DY * DY2)
-            ''            If D > 0 Then D = -D
-            ''            D = 1 + D
-            ''
-            ''            If D < 0 Then D = 0
-            ''            If D > 1 Then D = 1
-            ''
-            ''            If I = 1 Then Debug.Print D
-            ''---------------------
-            'D = 1
-
-            .VX = .VX + .VXchange    '* D
-            .VY = .VY + .VYchange    '* D
+            .VX = .VX + .VXchange
+            .VY = .VY + .VYchange
 
             DX = .TX - .X
             DY = .TY - .Y
 
             D = (DX * DX + DY * DY)
-            If D < 25 Then        ' TARGET REACED
+            If D < 25 Then        ' TARGET REACHED
                 .NReachedTargets = .NReachedTargets + 1&
 
                 Select Case MODE
@@ -540,31 +513,28 @@ Public Sub MOVE()
                     .cB = (.maxV / GlobMaxSpeed - 0.55) / 0.45
 
 
-Case 6
-AgTar(I) = (AgTar(I) + 1) Mod (NTar + 1)
-.TX = TargARR(AgTar(I)).X + Cos(I / NA * PI2) * 53
-.TY = TargARR(AgTar(I)).Y + Sin(I / NA * PI2) * 53
+                Case 6
+                    AgentTarget(I) = (AgentTarget(I) + 1) Mod (NTargets + 1)
+                    .TX = ArrayOfTargets(AgentTarget(I)).X + Cos(I / NA * PI2) * 53
+                    .TY = ArrayOfTargets(AgentTarget(I)).Y + Sin(I / NA * PI2) * 53
 
 
 
                 End Select
 
             Else
+                'Slow down when about to reach target
                 DX = DX - .VX * VMUL * 1.5
                 DY = DY - .VY * VMUL * 1.5
-
                 D = DX * DX + DY * DY
-
                 D = 1# / Sqr(D)
                 DX = DX * D
                 DY = DY * D
 
-'                .VX = .VX + DX * VelChangeGlobStrngth * 0.125    ' 0.11
-'                .VY = .VY + DY * VelChangeGlobStrngth * 0.125    ' 0.11
-
                 .VX = .VX + DX * VelChangeGlobStrngth * 0.125 * .maxV
                 .VY = .VY + DY * VelChangeGlobStrngth * 0.125 * .maxV
 
+                'control Max Speed
                 D = .VX * .VX + .VY * .VY
                 If D > .maxV2 Then
                     D = .maxV / Sqr(D)
@@ -577,17 +547,17 @@ AgTar(I) = (AgTar(I) + 1) Mod (NTar + 1)
             .X = .X + .VX
             .Y = .Y + .VY
 
+            'keep in world
             If .X < 0# Then .X = 0#
             If .Y < 0# Then .Y = 0#
             If .X > WorldW Then .X = WorldW
             If .Y > WorldH Then .Y = WorldH
 
-            .VXchange = .VXchange * 0.5 '0
+            'Preserve some V Change
+            .VXchange = .VXchange * 0.5    '0
             .VYchange = .VYchange * 0.5
-            
 
             .V = GlobMaxSpeed2 * 0.5 + .VX * .VX + .VY * .VY
-
 
         End With
     Next
@@ -607,18 +577,18 @@ Private Sub RVO()
     Dim D()       As Double
     Dim Npairs    As Long
 
-    Dim CheckPosX    As Double
-    Dim CheckPosY    As Double
+    Dim CheckPosX As Double
+    Dim CheckPosY As Double
     Dim ddX       As Double
     Dim ddY       As Double
     Dim NdX       As Double
     Dim NdY       As Double
 
     Dim dd        As Double
-    Dim Ki        As Double
-    Dim Kj        As Double
-    Dim JIdx      As Double
-    Dim JIdy      As Double
+    Dim kSpeedI        As Double
+    Dim kSpeedJ        As Double
+    Dim AgentsDX      As Double
+    Dim AgentsDY      As Double
     Dim JID       As Double
 
     Dim DOT       As Double
@@ -651,50 +621,50 @@ Private Sub RVO()
 
             dd = ddX * ddX + ddY * ddY
             If dd < ControlDist2 Then
-                
+
                 SqrDD = Sqr(dd)
-                
+
                 'DD inverse proportional to DIST (Range 0,1)
                 dd = 1# - SqrDD * invControlDist
                 ' 'smoothstep
                 dd = dd * dd * (3# - 2# * dd)
 
-'Normalize ddx,ddy and multiply by DD
-SqrDD = 1# / SqrDD
+                'Normalize ddx,ddy and multiply by DD
+                SqrDD = 1# / SqrDD
                 ddX = ddX * SqrDD * dd
                 ddY = ddY * SqrDD * dd
 
                 ' More changes to Faster
-                Ki = Agent(I).V / (Agent(I).V + Agent(J).V)
-                Kj = 1 - Ki
+                kSpeedI = Agent(I).V / (Agent(I).V + Agent(J).V)
+                kSpeedJ = 1 - kSpeedI
                 '
 
                 'Compute Normalized DX DY of Agents I,J
-                JIdx = DX(pair)
-                JIdy = DY(pair)
+                AgentsDX = DX(pair)
+                AgentsDY = DY(pair)
                 JID = 1# / Sqr(D(pair))
-                JIdx = JIdx * JID
-                JIdy = JIdy * JID
+                AgentsDX = AgentsDX * JID
+                AgentsDY = AgentsDY * JID
 
 
-                DOT = Agent(I).ShoulderX * JIdx + Agent(I).ShoulderY * JIdy
-                
-                Avoid = Agent(I).Avoidance * (0.7 + DOT * 0.3) 'Mora Avoid if orher agent is in front
+                DOT = Agent(I).ShoulderX * AgentsDX + Agent(I).ShoulderY * AgentsDY
+
+                Avoid = Agent(I).Avoidance * (0.7 + DOT * 0.3)    'Mora Avoid if orher agent is in front
                 DOT = 0.5 + DOT * 0.5
                 DOT = DOT * DOT * 0.005 * Agent(I).maxV
-                Agent(I).VXchange = Agent(I).VXchange - ddX * Ki * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
-                Agent(I).VYchange = Agent(I).VYchange - ddY * Ki * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
+                Agent(I).VXchange = Agent(I).VXchange - ddX * kSpeedI * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
+                Agent(I).VYchange = Agent(I).VYchange - ddY * kSpeedI * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 'It's useful to take some Velocity from orher Agent
                 Agent(I).VXchange = Agent(I).VXchange + Agent(J).VX * DOT
                 Agent(I).VYchange = Agent(I).VYchange + Agent(J).VY * DOT
 
-                DOT = Agent(J).ShoulderX * -JIdx + Agent(J).ShoulderY * -JIdy
+                DOT = Agent(J).ShoulderX * -AgentsDX + Agent(J).ShoulderY * -AgentsDY
                 DOT = 0.5 + DOT * 0.5
                 Avoid = Agent(J).Avoidance * (0.7 + DOT * 0.3)
                 DOT = 0.5 + DOT * 0.5
                 DOT = DOT * DOT * 0.005 * Agent(J).maxV
-                Agent(J).VXchange = Agent(J).VXchange + ddX * Kj * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
-                Agent(J).VYchange = Agent(J).VYchange + ddY * Kj * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
+                Agent(J).VXchange = Agent(J).VXchange + ddX * kSpeedJ * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
+                Agent(J).VYchange = Agent(J).VYchange + ddY * kSpeedJ * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 Agent(J).VXchange = Agent(J).VXchange + Agent(I).VX * DOT
                 Agent(J).VYchange = Agent(J).VYchange + Agent(I).VY * DOT
 
@@ -781,7 +751,7 @@ End Sub
 
 
 
-Private Sub BUILDH(I As Long)
+Private Sub BUILDHuman(I As Long)
     Dim L         As tCapsule
 
     Dim X#, Y#
@@ -848,7 +818,7 @@ Private Sub BUILDH(I As Long)
         .P1 = vec3(0, -4.5, 1.25)
         H = Sin(A) * 1.5: If H > 0 Then H = 0
         .P2 = vec3(Cos(A) * 3, H, 1.25)
-        SOLVEik .P1, .P2, 2.5, 2, Knee, tmp1
+        IKSolve .P1, .P2, 2.5, 2, Knee, tmp1
         tmp1 = .P1
         tmp2 = .P2
         Knee.Z = .P1.Z
@@ -863,7 +833,7 @@ Private Sub BUILDH(I As Long)
         .P1 = vec3(0, -4.5, -1.25)
         H = Sin(A) * 1.5: If H > 0 Then H = 0
         .P2 = vec3(Cos(A) * 3, H, -1.25)
-        SOLVEik .P1, .P2, 2.5, 2, Knee, tmp1
+        IKSolve .P1, .P2, 2.5, 2, Knee, tmp1
         tmp1 = .P1
         tmp2 = .P2
         Knee.Z = .P1.Z
@@ -903,28 +873,28 @@ Private Sub BUILDH(I As Long)
     End With
 End Sub
 
-Private Sub RotateXZ(p As tVec3, DX#, DY#)
-    Dim c         As tVec3: c = p
-    p.X = c.X * DX + c.Z * -DY
-    p.Z = c.X * DY + c.Z * DX
-End Sub
-Private Sub AddXZ(p As tVec3, X#, Y#)
-    p.X = p.X + X
-    p.Z = p.Z + Y
-End Sub
+'Private Sub RotateXZ(p As tVec3, cosA#, sinA#)
+'    Dim c         As tVec3: c = p
+'    p.X = c.X * cosA + c.Z * -sinA
+'    p.Z = c.X * sinA + c.Z * cosA
+'End Sub
+'Private Sub AddXZ(p As tVec3, X#, Y#)
+'    p.X = p.X + X
+'    p.Z = p.Z + Y
+'End Sub
 
-Private Sub transform(P1 As tVec3, P2 As tVec3, DX#, DY#, X#, Y#)
-'    RotateXZ P1, DX, DY
-'    RotateXZ P2, DX, DY
+Private Sub transform(P1 As tVec3, P2 As tVec3, CosA#, SinA#, X#, Y#)
+'    RotateXZ P1, cosA, sinA
+'    RotateXZ P2, cosA, sinA
 '    AddXZ P1, X, Y
 '    AddXZ P2, X, Y
-  Dim c         As tVec3: c = P1
-    P1.X = c.X * DX + c.Z * -DY + X
-    P1.Z = c.X * DY + c.Z * DX + Y
+    Dim c         As tVec3: c = P1
+    P1.X = c.X * CosA + c.Z * -SinA + X
+    P1.Z = c.X * SinA + c.Z * CosA + Y
 
-c = P2
-    P2.X = c.X * DX + c.Z * -DY + X
-    P2.Z = c.X * DY + c.Z * DX + Y
+    c = P2
+    P2.X = c.X * CosA + c.Z * -SinA + X
+    P2.Z = c.X * SinA + c.Z * CosA + Y
 
 End Sub
 
@@ -933,26 +903,26 @@ Public Sub INIT_Targets()
     Dim I         As Long
     Dim FirstTarg As Boolean
 
-    If NTar = 0 Then
-        ReDim AgTar(NA)
+    If NTargets = 0 Then
+        ReDim AgentTarget(NA)
         FirstTarg = True
 
     End If
 
-    NTar = 3 + 2
-    ReDim TargARR(NTar)
+    NTargets = 3 + 2
+    ReDim ArrayOfTargets(NTargets)
 
 
 
-    For I = 0 To NTar
-        TargARR(I).X = 200 + Rnd * (WorldW - 400)
-        TargARR(I).Y = 200 + Rnd * (WorldH - 400)
+    For I = 0 To NTargets
+        ArrayOfTargets(I).X = 200 + Rnd * (WorldW - 400)
+        ArrayOfTargets(I).Y = 200 + Rnd * (WorldH - 400)
     Next
 
     If FirstTarg Then
         For I = 1 To NA
-            Agent(I).TX = TargARR(0).X + Cos(I / NA * PI2) * 53
-            Agent(I).TY = TargARR(0).Y + Sin(I / NA * PI2) * 53
+            Agent(I).TX = ArrayOfTargets(0).X + Cos(I / NA * PI2) * 53
+            Agent(I).TY = ArrayOfTargets(0).Y + Sin(I / NA * PI2) * 53
         Next
     End If
 

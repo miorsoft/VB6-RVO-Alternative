@@ -21,13 +21,13 @@ Public Type tCapsule
     sP1           As tVec3
     sP2           As tVec3
     R             As Double
-    idxA          As Long
+    AgentIndex    As Long
     Size          As Double
 End Type
 
-Public CAP()      As tCapsule
-Public Ncap       As Long
-Public MaxNCap    As Long
+Public CAPSULES() As tCapsule
+Public NCapsulesInScreen As Long
+Public MaxNCapsulesInScreen As Long
 
 Public CAM        As c3DEasyCam
 
@@ -170,7 +170,7 @@ Public Function min(A As Double, B As Double) As Double
 End Function
 
 'https://iquilezles.org/articles/simpleik/
-Public Function SOLVEik(ByRef C1 As tVec3, _
+Public Function IKSolve(ByRef C1 As tVec3, _
                         ByRef C2 As tVec3, _
                         ByRef R1 As Double, _
                         ByRef R2 As Double, _
@@ -192,24 +192,25 @@ Public Function SOLVEik(ByRef C1 As tVec3, _
 
     H = DOT3(p, p)
     W = H + R1 * R1 - R2 * R2
-    S = Max(4# * R1 * R1 * H - W * W, 0#)
+    S = 4# * R1 * R1 * H - W * W: If S < 0# Then S = 0#
+
     S = Sqr(S)
     H = 0.5 / H
 
     Sol1.X = (p.X * W - p.Y * S) * H
     Sol1.Y = (p.Y * W + p.X * S) * H
-    If Sol1.X > -0.99 Then SOLVEik = True
+    If Sol1.X > -0.99 Then IKSolve = True
     Sol1.X = Sol1.X + C2.X
     Sol1.Y = Sol1.Y + C2.Y
 
 
     Sol2.X = (p.X * W + p.Y * S) * H
     Sol2.Y = (p.Y * W - p.X * S) * H
-    If Sol2.X > -0.99 Then SOLVEik = True
+    If Sol2.X > -0.99 Then IKSolve = True
     Sol2.X = Sol2.X + C2.X
     Sol2.Y = Sol2.Y + C2.Y
 
-    SOLVEik = True
+    IKSolve = True
 
 
 End Function
@@ -366,45 +367,45 @@ End Function
 
 Public Sub ADDlineToScreen(L As tCapsule, I As Long)
     Dim Vis       As Boolean
-CAM.FarPlane = 5000
+    CAM.FarPlane = 5000
 
     CAM.LineToScreen L.P1, L.P2, L.sP1, L.sP2, Vis
     If Vis Then
         If L.Size = 0 Then L.Size = 1
-        Ncap = Ncap + 1
-        If Ncap > MaxNCap Then
-            MaxNCap = Ncap * 2
-            ReDim Preserve CAP(MaxNCap)
+        NCapsulesInScreen = NCapsulesInScreen + 1
+        If NCapsulesInScreen > MaxNCapsulesInScreen Then
+            MaxNCapsulesInScreen = NCapsulesInScreen * 2
+            ReDim Preserve CAPSULES(MaxNCapsulesInScreen)
         End If
-        L.idxA = I
-        CAP(Ncap) = L
+        L.AgentIndex = I
+        CAPSULES(NCapsulesInScreen) = L
     End If
 
-'CAM.FarPlane = 400
-'
-'    '''---------- SHADOWS
-'    Vis = False
-'    With L
-'        CAM.LineToScreen vec3(.P1.X + .P1.Y * 1.3, 0, .P1.Z + .P1.Y * 1.2), _
-'                         vec3(.P2.X + .P2.Y * 1.3, 0, .P2.Z + .P2.Y * 1.2), L.sP1, L.sP2, Vis
-'    End With
-'
-'    If Vis Then
-'        If L.Size = 0 Then L.Size = 1
-'        Ncap = Ncap + 1
-'        If Ncap > MaxNCap Then
-'            MaxNCap = Ncap * 2
-'            ReDim Preserve CAP(MaxNCap)
-'        End If
-'        L.idxA = -1
-'        L.sP1.Z = L.sP1.Z * 0.5
-'        L.sP2.Z = L.sP2.Z * 0.5
-'
-'        CAP(Ncap) = L
-'
-'    End If
-'    --------------------------
-    
+    'CAM.FarPlane = 400
+    '
+    '    '''---------- SHADOWS
+    '    Vis = False
+    '    With L
+    '        CAM.LineToScreen vec3(.P1.X + .P1.Y * 1.3, 0, .P1.Z + .P1.Y * 1.2), _
+             '                         vec3(.P2.X + .P2.Y * 1.3, 0, .P2.Z + .P2.Y * 1.2), L.sP1, L.sP2, Vis
+    '    End With
+    '
+    '    If Vis Then
+    '        If L.Size = 0 Then L.Size = 1
+    '        NCapsulesInScreen = NCapsulesInScreen + 1
+    '        If NCapsulesInScreen > MaxNCapsulesInScreen Then
+    '            MaxNCapsulesInScreen = NCapsulesInScreen * 2
+    '            ReDim Preserve CAPSULES(MaxNCapsulesInScreen)
+    '        End If
+    '        L.AgentIndex = -1
+    '        L.sP1.Z = L.sP1.Z * 0.5
+    '        L.sP2.Z = L.sP2.Z * 0.5
+    '
+    '        CAPSULES(NCapsulesInScreen) = L
+    '
+    '    End If
+    '    --------------------------
+
 End Sub
 'Private Sub QuickSortFaces(List() As tFace, ByVal min As Long, ByVal Max As Long)
 '

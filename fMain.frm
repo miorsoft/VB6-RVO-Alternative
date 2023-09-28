@@ -15,10 +15,30 @@ Begin VB.Form fMain
       Strikethrough   =   0   'False
    EndProperty
    LinkTopic       =   "Form1"
-   ScaleHeight     =   10935
-   ScaleWidth      =   14820
+   ScaleHeight     =   729
+   ScaleMode       =   3  'Pixel
+   ScaleWidth      =   988
    StartUpPosition =   1  'CenterOwner
    WindowState     =   2  'Maximized
+   Begin VB.Label labelClick 
+      Alignment       =   2  'Center
+      BackStyle       =   0  'Transparent
+      Caption         =   "Click to Start"
+      BeginProperty Font 
+         Name            =   "Tahoma"
+         Size            =   15.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   615
+      Left            =   3240
+      TabIndex        =   0
+      Top             =   2280
+      Width           =   2295
+   End
 End
 Attribute VB_Name = "fMain"
 Attribute VB_GlobalNameSpace = False
@@ -33,12 +53,12 @@ Option Explicit
 
 
 Private Sub Form_Load()
-Randomize Timer
+    Randomize Timer
 
     ScaleMode = vbPixels
 
-    WorldW = 1200 'Me.ScaleWidth
-    WorldH = 1200 '730 ' Me.ScaleHeight
+    WorldW = 1200                 'Me.ScaleWidth
+    WorldH = 1200                 '730 ' Me.ScaleHeight
 
 
     Init_RVO 400 * 1.3
@@ -53,9 +73,16 @@ Randomize Timer
     CAM.FarPlane = 3000
 
 
+    labelClick.Left = (Me.ScaleWidth - labelClick.Width) * 0.5
+
+
 End Sub
 
 Private Sub Form_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+
+    labelClick.visible = False
+
     If Not (doloop) Then Call MAINLOOP
     If Button = 1 Then
         MODE = (MODE + 1) Mod 7
@@ -63,13 +90,13 @@ Private Sub Form_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As 
             WorldW = 2000
             WorldH = 2000
             GRID.INIT WorldW * 1, WorldH * 1, GridSize
-            
+
             INIT_Targets
-        
+
         Else
-'            WorldW = 1000         'Me.ScaleWidth
-'            WorldH = 730          ' Me.ScaleHeight
-'            GRID.INIT WorldW * 1, WorldH * 1, GridSize
+            '            WorldW = 1000         'Me.ScaleWidth
+            '            WorldH = 730          ' Me.ScaleHeight
+            '            GRID.INIT WorldW * 1, WorldH * 1, GridSize
         End If
 
     End If
@@ -95,6 +122,7 @@ Private Sub Form_Resize()
     Set CC = SRF.CreateContext
     CC.AntiAlias = CAIRO_ANTIALIAS_FAST
     CC.SetLineCap CAIRO_LINE_CAP_ROUND
+    
 End Sub
 
 'Private Sub Form_Unload(Cancel As Integer)
