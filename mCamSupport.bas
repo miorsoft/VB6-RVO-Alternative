@@ -381,30 +381,33 @@ Public Sub ADDlineToScreen(L As tCapsule, I As Long)
         CAPSULES(NCapsulesInScreen) = L
     End If
 
-    'CAM.FarPlane = 400
-    '
-    '    '''---------- SHADOWS
-    '    Vis = False
-    '    With L
-    '        CAM.LineToScreen vec3(.P1.X + .P1.Y * 1.3, 0, .P1.Z + .P1.Y * 1.2), _
-             '                         vec3(.P2.X + .P2.Y * 1.3, 0, .P2.Z + .P2.Y * 1.2), L.sP1, L.sP2, Vis
-    '    End With
-    '
-    '    If Vis Then
-    '        If L.Size = 0 Then L.Size = 1
-    '        NCapsulesInScreen = NCapsulesInScreen + 1
-    '        If NCapsulesInScreen > MaxNCapsulesInScreen Then
-    '            MaxNCapsulesInScreen = NCapsulesInScreen * 2
-    '            ReDim Preserve CAPSULES(MaxNCapsulesInScreen)
-    '        End If
-    '        L.AgentIndex = -1
-    '        L.sP1.Z = L.sP1.Z * 0.5
-    '        L.sP2.Z = L.sP2.Z * 0.5
-    '
-    '        CAPSULES(NCapsulesInScreen) = L
-    '
-    '    End If
-    '    --------------------------
+
+    If RunningNotInIDE Then       'Compiled (not IDE)
+        '    '''---------- SHADOWS
+        CAM.FarPlane = 400
+        Vis = False
+        With L
+            CAM.LineToScreen vec3(.P1.X + .P1.Y * 1.3, 0, .P1.Z + .P1.Y * 1.2), _
+                             vec3(.P2.X + .P2.Y * 1.3, 0, .P2.Z + .P2.Y * 1.2), L.sP1, L.sP2, Vis
+        End With
+
+        If Vis Then
+            If L.Size = 0 Then L.Size = 1
+            NCapsulesInScreen = NCapsulesInScreen + 1
+            If NCapsulesInScreen > MaxNCapsulesInScreen Then
+                MaxNCapsulesInScreen = NCapsulesInScreen * 2
+                ReDim Preserve CAPSULES(MaxNCapsulesInScreen)
+            End If
+            L.AgentIndex = -1
+            L.sP1.Z = L.sP1.Z * 0.5
+            L.sP2.Z = L.sP2.Z * 0.5
+
+            CAPSULES(NCapsulesInScreen) = L
+
+        End If
+        '    --------------------------
+    End If
+
 
 End Sub
 'Private Sub QuickSortFaces(List() As tFace, ByVal min As Long, ByVal Max As Long)

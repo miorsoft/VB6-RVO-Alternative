@@ -52,14 +52,26 @@ Option Explicit
 
 
 
+Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
+'F
+
+    If KeyCode = 70 Then doFRAMES = Not (doFRAMES)
+
+End Sub
+
 Private Sub Form_Load()
     Randomize Timer
 
     ScaleMode = vbPixels
 
+
+    'Me.ScaleHeight = 576 - 12 ' 640
+    'Me.ScaleWidth = 1024 - 36 '852 ' Round(Me.ScaleHeight * 4 / 3)
+
+
+
     WorldW = 1200                 'Me.ScaleWidth
     WorldH = 1200                 '730 ' Me.ScaleHeight
-
 
     Init_RVO 400 * 1.3
 
@@ -72,9 +84,9 @@ Private Sub Form_Load()
     CAM.NearPlane = 10
     CAM.FarPlane = 3000
 
-
     labelClick.Left = (Me.ScaleWidth - labelClick.Width) * 0.5
 
+    RunningNotInIDE = (App.LogMode <> 0)
 
 End Sub
 
@@ -83,7 +95,7 @@ Private Sub Form_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As 
 
     labelClick.visible = False
 
-    If Not (doloop) Then Call MAINLOOP
+    If Not (doLOOP) Then Call MAINLOOP
     If Button = 1 Then
         MODE = (MODE + 1) Mod 7
         If MODE = 6 Then
@@ -111,8 +123,9 @@ End Sub
 
 
 Private Sub Form_Resize()
-    ScreenW = Me.ScaleWidth
-    ScreenH = Me.ScaleHeight
+
+    ScreenW = Int(Me.ScaleWidth)
+    ScreenH = Int(Me.ScaleHeight)
     Set CAM = New c3DEasyCam
     CAM.INIT vec3(200, 200, 200), vec3(0, 0, 0), vec3(ScreenW * 0.5, ScreenH * 0.5, 0), vec3(0, -1, 0)
     CAM.NearPlane = 10
@@ -122,7 +135,7 @@ Private Sub Form_Resize()
     Set CC = SRF.CreateContext
     CC.AntiAlias = CAIRO_ANTIALIAS_FAST
     CC.SetLineCap CAIRO_LINE_CAP_ROUND
-    
+
 End Sub
 
 'Private Sub Form_Unload(Cancel As Integer)
@@ -132,6 +145,6 @@ End Sub
 'End Sub
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-    doloop = False
+    doLOOP = False
 
 End Sub

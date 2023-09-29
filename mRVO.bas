@@ -7,10 +7,10 @@ Public Type tAgent
     Y             As Double
     VX            As Double
     VY            As Double
-    nVX           As Double 'Normalized Vel
+    nVX           As Double       'Normalized Vel
     nVY           As Double
 
-    TX            As Double 'Target Position
+    TX            As Double       'Target Position
     TY            As Double
     VXchange      As Double
     VYchange      As Double
@@ -28,14 +28,14 @@ Public Type tAgent
     SciaX()       As Double
     SciaY()       As Double
 
-    ShoulderX     As Double 'Shoulder/Chest direction
+    ShoulderX     As Double       'Shoulder/Chest direction
     ShoulderY     As Double
 
     Avoidance     As Double
 
     NReachedTargets As Long
 
-    Walked        As Double 'Walked Distance
+    Walked        As Double       'Walked Distance
 
 End Type
 
@@ -61,11 +61,13 @@ Private Const GlobMaxSpeed2 As Double = GlobMaxSpeed * GlobMaxSpeed
 
 Public GRID       As cSpatialGrid
 
-Public doloop     As Boolean
+Public doLOOP     As Boolean
+Public doFRAMES   As Boolean
+Private Frame     As Long
 
 Private CNT       As Long
 
-Private Const ControlDist As Double = 14    '16 '15 ' 14
+Private Const ControlDist As Double = 17    '14    '16 '15 ' 14
 Private Const ControlDist2 As Double = ControlDist * ControlDist
 Private Const invControlDist As Double = 1 / ControlDist
 
@@ -74,6 +76,12 @@ Public Const VMUL As Double = 17  '15 '16 ' 17
 Public Const GridSize As Double = 2 * GlobMaxSpeed * VMUL + ControlDist    '40    '35 '25
 
 Private Const VelChangeGlobStrngth As Double = 0.2    ' 0.2 '0.2    'con MaxV
+
+
+Private Const AgentsMinDist As Double = 5
+Private Const AgentsMinDist2 As Double = AgentsMinDist * AgentsMinDist
+
+'Private Const ControlDistPERC As Double = 1 - 0.5 * AgentsMinDist / ControlDist
 
 Public MODE       As Long
 Public FOLLOW     As Long
@@ -86,8 +94,10 @@ Private Const OneMinusMinAvoid As Double = 1 - minAvoid
 
 ' FOR MODE 6
 Private ArrayOfTargets() As tVec3
-Private NTargets      As Long
-Private AgentTarget()   As Long
+Private NTargets  As Long
+Private AgentTarget() As Long
+
+Public RunningNotInIDE As Boolean
 
 
 
@@ -195,6 +205,7 @@ Public Sub DRAW()
 
 
     ' GRID
+
     For X = 0 To WorldW Step GridSize
         CC.DrawLine X, 0, X, WorldH, , 1, 5263440
     Next
@@ -339,6 +350,7 @@ Public Sub draw_CAMERA()
 
 
     '--------- GIRD
+    CAM.FarPlane = 5000
     CC.SetLineWidth 1.5
     CC.SetSourceRGB 0.25, 0.25, 0.25
     '....................................
@@ -585,10 +597,10 @@ Private Sub RVO()
     Dim NdY       As Double
 
     Dim dd        As Double
-    Dim kSpeedI        As Double
-    Dim kSpeedJ        As Double
-    Dim AgentsDX      As Double
-    Dim AgentsDY      As Double
+    Dim kSpeedI   As Double
+    Dim kSpeedJ   As Double
+    Dim AgentsDX  As Double
+    Dim AgentsDY  As Double
     Dim JID       As Double
 
     Dim DOT       As Double
@@ -596,6 +608,7 @@ Private Sub RVO()
     Dim MaxVelBasedStrength As Double
     Dim Avoid     As Double
     Dim SqrDD     As Double
+    Dim GoingToCollide As Double
 
 
     MaxVelBasedStrength = GlobMaxSpeed * 1.125
@@ -625,14 +638,16 @@ Private Sub RVO()
                 SqrDD = Sqr(dd)
 
                 'DD inverse proportional to DIST (Range 0,1)
-                dd = 1# - SqrDD * invControlDist
+                'dd = 1# - SqrDD * invControlDist
+                GoingToCollide = 1# - 0.95 * SqrDD * invControlDist    '
+
                 ' 'smoothstep
-                dd = dd * dd * (3# - 2# * dd)
+                GoingToCollide = GoingToCollide * GoingToCollide * (3# - 2# * GoingToCollide)
 
                 'Normalize ddx,ddy and multiply by DD
                 SqrDD = 1# / SqrDD
-                ddX = ddX * SqrDD * dd
-                ddY = ddY * SqrDD * dd
+                ddX = ddX * SqrDD * GoingToCollide
+                ddY = ddY * SqrDD * GoingToCollide
 
                 ' More changes to Faster
                 kSpeedI = Agent(I).V / (Agent(I).V + Agent(J).V)
@@ -648,21 +663,19 @@ Private Sub RVO()
 
 
                 DOT = Agent(I).ShoulderX * AgentsDX + Agent(I).ShoulderY * AgentsDY
-
                 Avoid = Agent(I).Avoidance * (0.7 + DOT * 0.3)    'Mora Avoid if orher agent is in front
                 DOT = 0.5 + DOT * 0.5
-                DOT = DOT * DOT * 0.005 * Agent(I).maxV
+                DOT = DOT * DOT * 0.03 * GoingToCollide    '* Agent(I).maxV
                 Agent(I).VXchange = Agent(I).VXchange - ddX * kSpeedI * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 Agent(I).VYchange = Agent(I).VYchange - ddY * kSpeedI * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
-                'It's useful to take some Velocity from orher Agent
+                'It's useful to take some Velocity from other Agent
                 Agent(I).VXchange = Agent(I).VXchange + Agent(J).VX * DOT
                 Agent(I).VYchange = Agent(I).VYchange + Agent(J).VY * DOT
 
                 DOT = Agent(J).ShoulderX * -AgentsDX + Agent(J).ShoulderY * -AgentsDY
-                DOT = 0.5 + DOT * 0.5
                 Avoid = Agent(J).Avoidance * (0.7 + DOT * 0.3)
                 DOT = 0.5 + DOT * 0.5
-                DOT = DOT * DOT * 0.005 * Agent(J).maxV
+                DOT = DOT * DOT * 0.03 * GoingToCollide    ' * Agent(J).maxV
                 Agent(J).VXchange = Agent(J).VXchange + ddX * kSpeedJ * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 Agent(J).VYchange = Agent(J).VYchange + ddY * kSpeedJ * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 Agent(J).VXchange = Agent(J).VXchange + Agent(I).VX * DOT
@@ -673,12 +686,15 @@ Private Sub RVO()
 
             '------------------------------------
             'Separate
-            If D(pair) < 25 Then
+            If D(pair) < AgentsMinDist2 Then
+                '          Stop
+                '            FOLLOW = I
+
                 dd = Sqr(D(pair))
                 ddX = DX(pair) / dd
                 ddY = DY(pair) / dd
-                ddX = ddX * (5 - dd)
-                ddY = ddY * (5 - dd)
+                ddX = ddX * (AgentsMinDist - dd) * 0.5
+                ddY = ddY * (AgentsMinDist - dd) * 0.5
                 Agent(I).X = Agent(I).X - ddX
                 Agent(I).Y = Agent(I).Y - ddY
                 Agent(J).X = Agent(J).X + ddX
@@ -689,12 +705,12 @@ Private Sub RVO()
         Next
     End With
 
-    If (CNT And 7&) = 0 Then fMain.Caption = "Click to change Mode.   Mode: " & MODE & "   Pairs: " & Npairs & "   Right click to change Camera follow"
+    If (CNT And 7&) = 0 Then fMain.Caption = "Click to change Mode.   Mode: " & MODE & "   Pairs: " & Npairs & "   Right click to change Camera follow             " & Frame \ 25
 
 End Sub
 
 Public Sub MAINLOOP()
-    doloop = True
+    doLOOP = True
 
 
     Do
@@ -706,14 +722,27 @@ Public Sub MAINLOOP()
 
 
 
-        If (CNT And 3&) = 0 Then
-            updateTRAILS
+        '        If (CNT And 3&) = 0 Then
+        '            updateTRAILS
+        '        End If
+
+
+        If doFRAMES Then
+            If (CNT And 1&) = 0 Then
+
+
+                SRF.WriteContentToPngFile App.Path & "\FRAMES\" & Format(Frame, "00000") & ".png"
+                Frame = Frame + 1
+
+            End If
         End If
+
+
 
         CNT = CNT + 1
         DoEvents
 
-    Loop While doloop
+    Loop While doLOOP
 
 End Sub
 
