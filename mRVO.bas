@@ -652,8 +652,10 @@ Private Sub RVO()
                 ddX = ddX * SqrDD * GoingToCollide
                 ddY = ddY * SqrDD * GoingToCollide
 
-                ' More changes to Faster
-                kSpeedI = Agent(I).V / (Agent(I).V + Agent(J).V)
+                ' More changes to Faster at this moment
+                'kSpeedI = Agent(I).V / (Agent(I).V + Agent(J).V)
+                ' More changes to Faster (MaxV) - Seems Better
+                kSpeedI = Agent(I).maxV / (Agent(I).maxV + Agent(J).maxV)
                 kSpeedJ = 1 - kSpeedI
                 '
 
