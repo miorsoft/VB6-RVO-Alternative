@@ -294,8 +294,8 @@ Private Sub CalShoulders()
                 .nVX = .VX * D: .nVY = .VY * D
                 'DX = .ShoulderX * 0.87 + 0.13 * .nVX
                 'DY = .ShoulderY * 0.87 + 0.13 * .nVY
-                DX = .ShoulderX * 0.84 + 0.16 * .nVX
-                DY = .ShoulderY * 0.84 + 0.16 * .nVY
+                DX = .ShoulderX * 0.85 + 0.15 * .nVX
+                DY = .ShoulderY * 0.85 + 0.15 * .nVY
                 
                 D = 1# / Sqr(DX * DX + DY * DY): DX = DX * D: DY = DY * D
                 .ShoulderX = DX
@@ -671,7 +671,7 @@ Private Sub RVO()
                 Agent(I).VYchange = Agent(I).VYchange - ddY * kSpeedI * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 'It's useful to take some Velocity from other Agent
                 If DOT > 0# Then
-                    DOT = DOT * 0.035 * GoingToCollide    '* Agent(I).maxV
+                    DOT = DOT * 0.027 * GoingToCollide '.035
                     Agent(I).VXchange = Agent(I).VXchange + Agent(J).VX * DOT
                     Agent(I).VYchange = Agent(I).VYchange + Agent(J).VY * DOT
                 End If
@@ -682,7 +682,7 @@ Private Sub RVO()
                 Agent(J).VXchange = Agent(J).VXchange + ddX * kSpeedJ * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 Agent(J).VYchange = Agent(J).VYchange + ddY * kSpeedJ * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 If DOT > 0# Then
-                    DOT = DOT * 0.035 * GoingToCollide    ' * Agent(J).maxV
+                    DOT = DOT * 0.027 * GoingToCollide
                     Agent(J).VXchange = Agent(J).VXchange + Agent(I).VX * DOT
                     Agent(J).VYchange = Agent(J).VYchange + Agent(I).VY * DOT
                 End If
