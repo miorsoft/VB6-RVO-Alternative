@@ -292,8 +292,11 @@ Private Sub CalShoulders()
             If D Then
                 D = 1# / D
                 .nVX = .VX * D: .nVY = .VY * D
-                DX = .ShoulderX * 0.87 + 0.13 * .nVX
-                DY = .ShoulderY * 0.87 + 0.13 * .nVY
+                'DX = .ShoulderX * 0.87 + 0.13 * .nVX
+                'DY = .ShoulderY * 0.87 + 0.13 * .nVY
+                DX = .ShoulderX * 0.84 + 0.16 * .nVX
+                DY = .ShoulderY * 0.84 + 0.16 * .nVY
+                
                 D = 1# / Sqr(DX * DX + DY * DY): DX = DX * D: DY = DY * D
                 .ShoulderX = DX
                 .ShoulderY = DY
@@ -611,7 +614,7 @@ Private Sub RVO()
     Dim GoingToCollide As Double
 
 
-    MaxVelBasedStrength = GlobMaxSpeed * 1.125
+    MaxVelBasedStrength = GlobMaxSpeed * 1    '1.125
 
     With GRID
         .ResetPoints
@@ -664,22 +667,25 @@ Private Sub RVO()
 
                 DOT = Agent(I).ShoulderX * AgentsDX + Agent(I).ShoulderY * AgentsDY
                 Avoid = Agent(I).Avoidance * (0.7 + DOT * 0.3)    'Mora Avoid if orher agent is in front
-                DOT = 0.5 + DOT * 0.5
-                DOT = DOT * DOT * 0.03 * GoingToCollide    '* Agent(I).maxV
                 Agent(I).VXchange = Agent(I).VXchange - ddX * kSpeedI * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 Agent(I).VYchange = Agent(I).VYchange - ddY * kSpeedI * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 'It's useful to take some Velocity from other Agent
-                Agent(I).VXchange = Agent(I).VXchange + Agent(J).VX * DOT
-                Agent(I).VYchange = Agent(I).VYchange + Agent(J).VY * DOT
+                If DOT > 0# Then
+                    DOT = DOT * 0.035 * GoingToCollide    '* Agent(I).maxV
+                    Agent(I).VXchange = Agent(I).VXchange + Agent(J).VX * DOT
+                    Agent(I).VYchange = Agent(I).VYchange + Agent(J).VY * DOT
+                End If
+
 
                 DOT = Agent(J).ShoulderX * -AgentsDX + Agent(J).ShoulderY * -AgentsDY
                 Avoid = Agent(J).Avoidance * (0.7 + DOT * 0.3)
-                DOT = 0.5 + DOT * 0.5
-                DOT = DOT * DOT * 0.03 * GoingToCollide    ' * Agent(J).maxV
                 Agent(J).VXchange = Agent(J).VXchange + ddX * kSpeedJ * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
                 Agent(J).VYchange = Agent(J).VYchange + ddY * kSpeedJ * VelChangeGlobStrngth * MaxVelBasedStrength * Avoid
-                Agent(J).VXchange = Agent(J).VXchange + Agent(I).VX * DOT
-                Agent(J).VYchange = Agent(J).VYchange + Agent(I).VY * DOT
+                If DOT > 0# Then
+                    DOT = DOT * 0.035 * GoingToCollide    ' * Agent(J).maxV
+                    Agent(J).VXchange = Agent(J).VXchange + Agent(I).VX * DOT
+                    Agent(J).VYchange = Agent(J).VYchange + Agent(I).VY * DOT
+                End If
 
             End If
 

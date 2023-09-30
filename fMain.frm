@@ -65,8 +65,9 @@ Private Sub Form_Load()
     ScaleMode = vbPixels
 
 
-    'Me.ScaleHeight = 576 - 12 ' 640
-    'Me.ScaleWidth = 1024 - 36 '852 ' Round(Me.ScaleHeight * 4 / 3)
+' UNCOMMENT For FRAMES
+'    Me.ScaleHeight = 576 - 12 ' 640
+'    Me.ScaleWidth = 1024 - 36 '852 ' Round(Me.ScaleHeight * 4 / 3)
 
 
 
