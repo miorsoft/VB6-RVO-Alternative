@@ -52,10 +52,16 @@ Option Explicit
 
 
 
+
+
 Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
 'F
-
+'MsgBox KeyCode
     If KeyCode = 70 Then doFRAMES = Not (doFRAMES)
+
+
+    'C
+    If KeyCode = 67 Then CameraMode = Not (CameraMode)
 
 End Sub
 
@@ -63,11 +69,13 @@ Private Sub Form_Load()
     Randomize Timer
 
     ScaleMode = vbPixels
+    If Dir(App.Path & "\Frames", vbDirectory) = vbNullString Then MkDir App.Path & "\Frames"
+    If Dir(App.Path & "\Frames\*.*", vbArchive) <> vbNullString Then Kill App.Path & "\Frames\*.*"
 
 
-' UNCOMMENT For FRAMES
-'    Me.ScaleHeight = 576 - 12 ' 640
-'    Me.ScaleWidth = 1024 - 36 '852 ' Round(Me.ScaleHeight * 4 / 3)
+    '    ' UNCOMMENT For FRAMES
+    '    Me.ScaleHeight = 576 - 12     ' 640
+    '    Me.ScaleWidth = 1024 - 36     '852 ' Round(Me.ScaleHeight * 4 / 3)
 
 
 
@@ -84,6 +92,8 @@ Private Sub Form_Load()
     CAM.INIT vec3(200, 200, 200), vec3(0, 0, 0), vec3(ScreenW * 0.5, ScreenH * 0.5, 0), vec3(0, -1, 0)
     CAM.NearPlane = 10
     CAM.FarPlane = 3000
+
+
 
     labelClick.Left = (Me.ScaleWidth - labelClick.Width) * 0.5
 
@@ -131,6 +141,7 @@ Private Sub Form_Resize()
     CAM.INIT vec3(200, 200, 200), vec3(0, 0, 0), vec3(ScreenW * 0.5, ScreenH * 0.5, 0), vec3(0, -1, 0)
     CAM.NearPlane = 10
     CAM.FarPlane = 3000
+
 
     Set SRF = Cairo.CreateSurface(ScreenW, ScreenH, ImageSurface)
     Set CC = SRF.CreateContext

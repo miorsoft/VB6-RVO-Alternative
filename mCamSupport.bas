@@ -32,6 +32,10 @@ Public MaxNCapsulesInScreen As Long
 Public CAM        As c3DEasyCam
 
 
+
+
+
+
 Public Function vec3(X As Double, Y As Double, Z As Double) As tVec3
     With vec3
         .X = X
