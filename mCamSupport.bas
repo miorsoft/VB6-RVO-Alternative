@@ -23,6 +23,8 @@ Public Type tCapsule
     R             As Double
     AgentIndex    As Long
     Size          As Double
+    CamD          As Double
+
 End Type
 
 Public CAPSULES() As tCapsule
@@ -287,7 +289,7 @@ End Sub
 
 
 
-Private Function AnearestThanB(A As tCapsule, B As tCapsule) As Boolean
+Private Function BnearestThanA(A As tCapsule, B As tCapsule) As Boolean
 
     Dim D         As Double
     Dim NA As Double: Dim NB As Double
@@ -295,18 +297,23 @@ Private Function AnearestThanB(A As tCapsule, B As tCapsule) As Boolean
     Dim DY1 As Double: Dim Dy2 As Double
     Dim uA As Double: Dim uB As Double
 
-    AnearestThanB = A.sP1.Z + A.sP2.Z < B.sP1.Z + B.sP2.Z
+
+    '    BnearestThanA = A.sP1.Z + A.sP2.Z < B.sP1.Z + B.sP2.Z
+    '    BnearestThanA = min(A.sP1.Z, A.sP2.Z) < min(B.sP1.Z, B.sP2.Z)
+    BnearestThanA = A.CamD > B.CamD
+
+
     Exit Function
 
     Const E       As Double = 0.001
     If Abs(A.sP1.X - B.sP1.X) < E And Abs(A.sP1.Y - B.sP1.Y) < E Then
-        AnearestThanB = A.sP2.Z > B.sP2.Z: Exit Function
+        BnearestThanA = A.sP2.Z > B.sP2.Z: Exit Function
     ElseIf Abs(A.sP1.X - B.sP2.X) < E And Abs(A.sP1.Y - B.sP2.Y) < E Then
-        AnearestThanB = A.sP2.Z > B.sP1.Z: Exit Function
+        BnearestThanA = A.sP2.Z > B.sP1.Z: Exit Function
     ElseIf Abs(A.sP2.X - B.sP1.X) < E And Abs(A.sP2.Y - B.sP1.Y) < E Then
-        AnearestThanB = A.sP1.Z > B.sP2.Z: Exit Function
+        BnearestThanA = A.sP1.Z > B.sP2.Z: Exit Function
     ElseIf Abs(A.sP2.X - B.sP2.X) < E And Abs(A.sP2.Y - B.sP2.Y) < E Then
-        AnearestThanB = A.sP1.Z > B.sP1.Z: Exit Function
+        BnearestThanA = A.sP1.Z > B.sP1.Z: Exit Function
 
     Else
 
@@ -355,7 +362,7 @@ Private Function AnearestThanB(A As tCapsule, B As tCapsule) As Boolean
                         '                        IntersectOfLinesV3.X = A.sP1.X + (uA * Dx1)
                         '                        IntersectOfLinesV3.Y = A.sP1.Y + (uA * DY1)
                         ' Z ?
-                        AnearestThanB = A.sP1.Z + (uA * (A.sP2.Z - A.sP1.Z)) > _
+                        BnearestThanA = A.sP1.Z + (uA * (A.sP2.Z - A.sP1.Z)) > _
                                         B.sP1.Z + (uB * (B.sP2.Z - B.sP1.Z))    'Z of line B
                         Exit Function
                     End If
@@ -365,52 +372,56 @@ Private Function AnearestThanB(A As tCapsule, B As tCapsule) As Boolean
     End If
 
 
-    'If DefTrue Then AnearestThanB = True
+    'If DefTrue Then BnearestThanA = True
 
 End Function
 
 Public Sub ADDlineToScreen(L As tCapsule, I As Long)
     Dim Vis       As Boolean
     CAM.FarPlane = 5000
-
-    CAM.LineToScreen L.P1, L.P2, L.sP1, L.sP2, Vis
-    If Vis Then
-        If L.Size = 0 Then L.Size = 1
-        NCapsulesInScreen = NCapsulesInScreen + 1
-        If NCapsulesInScreen > MaxNCapsulesInScreen Then
-            MaxNCapsulesInScreen = NCapsulesInScreen * 2
-            ReDim Preserve CAPSULES(MaxNCapsulesInScreen)
-        End If
-        L.AgentIndex = I
-        CAPSULES(NCapsulesInScreen) = L
-    End If
-
-
-    If RunningNotInIDE Then       'Compiled (not IDE)
-        '    '''---------- SHADOWS
-        CAM.FarPlane = 400
-        Vis = False
-        With L
-            CAM.LineToScreen vec3(.P1.X + .P1.Y * 1.3, 0, .P1.Z + .P1.Y * 1.2), _
-                             vec3(.P2.X + .P2.Y * 1.3, 0, .P2.Z + .P2.Y * 1.2), L.sP1, L.sP2, Vis
-        End With
+    With L
+        CAM.LineToScreen .P1, .P2, .sP1, .sP2, Vis
 
         If Vis Then
-            If L.Size = 0 Then L.Size = 1
+            If .Size = 0 Then .Size = 1
             NCapsulesInScreen = NCapsulesInScreen + 1
             If NCapsulesInScreen > MaxNCapsulesInScreen Then
                 MaxNCapsulesInScreen = NCapsulesInScreen * 2
                 ReDim Preserve CAPSULES(MaxNCapsulesInScreen)
             End If
-            L.AgentIndex = -1
-            L.sP1.Z = L.sP1.Z * 0.5
-            L.sP2.Z = L.sP2.Z * 0.5
-
+            .AgentIndex = I
             CAPSULES(NCapsulesInScreen) = L
+            '            CAPSULES(NCapsulesInScreen).CamD = 1# / (0.5 * (.sP1.Z + .sP2.Z))
+            CAPSULES(NCapsulesInScreen).CamD = 1# / (Max(.sP1.Z, .sP2.Z)) - .Size * 0.5
 
         End If
-        '    --------------------------
-    End If
+
+
+        If RunningNotInIDE Then   'Compiled (not IDE)
+            '    '''---------- SHADOWS
+            CAM.FarPlane = 400
+            Vis = False
+            CAM.LineToScreen vec3(.P1.X + .P1.Y * 1.3, 0, .P1.Z + .P1.Y * 1.2), _
+                             vec3(.P2.X + .P2.Y * 1.3, 0, .P2.Z + .P2.Y * 1.2), .sP1, .sP2, Vis
+
+            If Vis Then
+                If L.Size = 0 Then .Size = 1
+                NCapsulesInScreen = NCapsulesInScreen + 1
+                If NCapsulesInScreen > MaxNCapsulesInScreen Then
+                    MaxNCapsulesInScreen = NCapsulesInScreen * 2
+                    ReDim Preserve CAPSULES(MaxNCapsulesInScreen)
+                End If
+                .AgentIndex = -1
+                .sP1.Z = .sP1.Z * 0.5
+                .sP2.Z = .sP2.Z * 0.5
+
+                CAPSULES(NCapsulesInScreen) = L
+                '                CAPSULES(NCapsulesInScreen).CamD = 2 * (1# / (0.5 * (.sP1.Z + .sP2.Z)))
+                CAPSULES(NCapsulesInScreen).CamD = 2 * (1# / (Max(.sP1.Z, .sP2.Z)) - .Size * 0.5)
+            End If
+            '    --------------------------
+        End If
+    End With
 
 
 End Sub
@@ -437,16 +448,23 @@ End Sub
 Public Sub QuickSortCapsules(List() As tCapsule, ByVal min As Long, ByVal Max As Long)
 
 ' FROM HI to LOW  'https://www.vbforums.com/showthread.php?11192-quicksort
-    Dim Low As Long, high As Long, temp As tCapsule, TestElement As tCapsule
+    Dim Low As Long, high As Long, temp As tCapsule, TestCapsule As tCapsule
+    Dim TestDist#
     'Debug.Print min, max
     Low = min: high = Max
-    TestElement = List((min + Max) / 2)
+    'TestCapsule = List((min + Max) / 2)
+    TestDist = (List(min).CamD + List(Max).CamD) * 0.5
     Do
-        '        Do While List(Low).DistToCam > TestElement: Low = Low + 1&: Loop
-        '        Do While List(high).DistToCam < TestElement: high = high - 1&: Loop
+        '        '        Do While List(Low).DistToCam > TestCapsule: Low = Low + 1&: Loop
+        '        '        Do While List(high).DistToCam < TestCapsule: high = high - 1&: Loop
+        '
+        '        Do While Low < Max And (BnearestThanA(List(Low), TestCapsule)): Low = Low + 1&: Loop
+        '        Do While high > min And Not (BnearestThanA(List(high), TestCapsule)): high = high - 1&: Loop
 
-        Do While Low < Max And (AnearestThanB(List(Low), TestElement)): Low = Low + 1&: Loop
-        Do While high > min And Not (AnearestThanB(List(high), TestElement)): high = high - 1&: Loop
+        Do While Low < Max And (List(Low).CamD > TestDist): Low = Low + 1&: Loop
+        Do While high > min And (List(high).CamD < TestDist): high = high - 1&: Loop
+
+
 
         If (Low <= high) Then
             temp = List(Low): List(Low) = List(high): List(high) = temp
@@ -456,4 +474,6 @@ Public Sub QuickSortCapsules(List() As tCapsule, ByVal min As Long, ByVal Max As
     Loop While (Low <= high)
     If (min < high) Then QuickSortCapsules List, min, high
     If (Low < Max) Then QuickSortCapsules List, Low, Max
+
+
 End Sub

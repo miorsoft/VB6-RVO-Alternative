@@ -98,11 +98,11 @@ Private Frame     As Long
 
 Private CNT       As Long
 
-Private Const ControlDist As Double = 19.5    ' 17    '17
+Private Const ControlDist As Double = 19    ' 17    '17
 Private Const ControlDist2 As Double = ControlDist * ControlDist
 Private Const invControlDist As Double = 1 / ControlDist
 
-Public Const VMUL As Double = 19.5    '21    '17
+Public Const VMUL As Double = 20  '21    '17
 
 Public Const GridSize As Double = 2 * GlobMaxSpeed * VMUL + ControlDist    '40    '35 '25
 
@@ -408,7 +408,7 @@ Private Sub Draw_PAIR()
                     CC.Stroke
 
                     'checkPt
-                    CC.SetSourceRGBA 1, 1, 0, 0.1
+                    CC.SetSourceRGBA 1, 1, 0, 0.05
                     CC.Arc .chkX, .chkY, ControlDist: CC.Fill
                     CC.SetSourceRGB 1, 1, 0
                     CC.Arc .chkX, .chkY, .GTC * ControlDist: CC.Stroke
@@ -416,7 +416,8 @@ Private Sub Draw_PAIR()
 
                     '.................................
                     CC.SetSourceRGB 0.55, 0.55, 0.55
-                    CC.MoveTo Agent(.A).X, Agent(.A).Y
+                    ' CC.MoveTo Agent(.A).X, Agent(.A).Y
+                    CC.MoveTo Agent(.B).X, Agent(.B).Y
                     CC.LineTo .chkX, .chkY: CC.Stroke
 
 
@@ -838,7 +839,9 @@ Private Sub RVO()
 
     Dim DOT_I#, DOT_J#
 
-    Dim GlobAvoidMUL As Double
+    Dim GlobAVOIDMUL As Double
+    Dim KOtherSpeed As Double
+
     Dim Avoid     As Double
     Dim SqrDD     As Double
     Dim GoingToCollide As Double
@@ -846,7 +849,8 @@ Private Sub RVO()
     Dim ChangeMul1#, ChangeMul2#
 
 
-    GlobAvoidMUL = GlobMaxSpeed * 0.125 * 0.85    '* 0.2    '* 5 * 2 '1.125
+    GlobAVOIDMUL = GlobMaxSpeed * 0.125 * 0.85    '* 0.2    '* 5 * 2 '1.125
+    KOtherSpeed = 0.22
 
     With GRID
         .ResetPoints
@@ -905,12 +909,12 @@ Private Sub RVO()
                 DOT_I = Agent(I).ShoulderX * AgentsDX + Agent(I).ShoulderY * AgentsDY
                 Avoid = Agent(I).Avoidance * (0.6 + DOT_I * 0.4)    'More Avoid if orher agent is in front
                 '                ChangeMul1 = kSpeedI * toTargetStrengthK * GlobAvoidMUL * Avoid
-                ChangeMul1 = kSpeedI * GlobAvoidMUL * Avoid
+                ChangeMul1 = kSpeedI * GlobAVOIDMUL * Avoid
                 Agent(I).VXchange = Agent(I).VXchange - dXX * ChangeMul1
                 Agent(I).VYchange = Agent(I).VYchange - dYY * ChangeMul1
                 'It's useful to take some Velocity from other Agent
                 If DOT_I > 0# Then
-                    DOT_I = DOT_I * GoingToCollide * GlobAvoidMUL * 0.22    '0.27 '.035
+                    DOT_I = DOT_I * GoingToCollide * GlobAVOIDMUL * KOtherSpeed
                     Agent(I).VXchange = Agent(I).VXchange + Agent(J).VX * DOT_I
                     Agent(I).VYchange = Agent(I).VYchange + Agent(J).VY * DOT_I
                 Else
@@ -921,12 +925,12 @@ Private Sub RVO()
                 DOT_J = Agent(J).ShoulderX * -AgentsDX + Agent(J).ShoulderY * -AgentsDY
                 Avoid = Agent(J).Avoidance * (0.6 + DOT_J * 0.4)
                 '                ChangeMul2 = kSpeedJ * toTargetStrengthK * GlobAvoidMUL * Avoid
-                ChangeMul2 = kSpeedJ * GlobAvoidMUL * Avoid
+                ChangeMul2 = kSpeedJ * GlobAVOIDMUL * Avoid
                 Agent(J).VXchange = Agent(J).VXchange + dXX * ChangeMul2
                 Agent(J).VYchange = Agent(J).VYchange + dYY * ChangeMul2
                 'It's useful to take some Velocity from other Agent
                 If DOT_J > 0# Then
-                    DOT_J = DOT_J * GoingToCollide * GlobAvoidMUL * 0.22    ' 0.025
+                    DOT_J = DOT_J * GoingToCollide * GlobAVOIDMUL * KOtherSpeed
                     Agent(J).VXchange = Agent(J).VXchange + Agent(I).VX * DOT_J
                     Agent(J).VYchange = Agent(J).VYchange + Agent(I).VY * DOT_J
                 Else
@@ -1082,7 +1086,7 @@ Private Sub BUILDHuman(I As Long)
 
     nX = Agent(I).nVX
     nY = Agent(I).nVY
-    With L
+    With L                        'BODY
         .Size = 1.5
         .P1.X = X
         .P1.Z = Y
