@@ -18,8 +18,8 @@ End Type
 Public Type tCapsule
     P1            As tVec3
     P2            As tVec3
-    sP1           As tVec3
-    sP2           As tVec3
+    ScreenP1      As tVec3
+    ScreenP2      As tVec3
     R             As Double
     AgentIndex    As Long
     Size          As Double
@@ -298,29 +298,29 @@ Private Function BnearestThanA(A As tCapsule, B As tCapsule) As Boolean
     Dim uA As Double: Dim uB As Double
 
 
-    '    BnearestThanA = A.sP1.Z + A.sP2.Z < B.sP1.Z + B.sP2.Z
-    '    BnearestThanA = min(A.sP1.Z, A.sP2.Z) < min(B.sP1.Z, B.sP2.Z)
+    '    BnearestThanA = A.ScreenP1.Z + A.ScreenP2.Z < B.ScreenP1.Z + B.ScreenP2.Z
+    '    BnearestThanA = min(A.ScreenP1.Z, A.ScreenP2.Z) < min(B.ScreenP1.Z, B.ScreenP2.Z)
     BnearestThanA = A.CamD > B.CamD
 
 
     Exit Function
 
     Const E       As Double = 0.001
-    If Abs(A.sP1.X - B.sP1.X) < E And Abs(A.sP1.Y - B.sP1.Y) < E Then
-        BnearestThanA = A.sP2.Z > B.sP2.Z: Exit Function
-    ElseIf Abs(A.sP1.X - B.sP2.X) < E And Abs(A.sP1.Y - B.sP2.Y) < E Then
-        BnearestThanA = A.sP2.Z > B.sP1.Z: Exit Function
-    ElseIf Abs(A.sP2.X - B.sP1.X) < E And Abs(A.sP2.Y - B.sP1.Y) < E Then
-        BnearestThanA = A.sP1.Z > B.sP2.Z: Exit Function
-    ElseIf Abs(A.sP2.X - B.sP2.X) < E And Abs(A.sP2.Y - B.sP2.Y) < E Then
-        BnearestThanA = A.sP1.Z > B.sP1.Z: Exit Function
+    If Abs(A.ScreenP1.X - B.ScreenP1.X) < E And Abs(A.ScreenP1.Y - B.ScreenP1.Y) < E Then
+        BnearestThanA = A.ScreenP2.Z > B.ScreenP2.Z: Exit Function
+    ElseIf Abs(A.ScreenP1.X - B.ScreenP2.X) < E And Abs(A.ScreenP1.Y - B.ScreenP2.Y) < E Then
+        BnearestThanA = A.ScreenP2.Z > B.ScreenP1.Z: Exit Function
+    ElseIf Abs(A.ScreenP2.X - B.ScreenP1.X) < E And Abs(A.ScreenP2.Y - B.ScreenP1.Y) < E Then
+        BnearestThanA = A.ScreenP1.Z > B.ScreenP2.Z: Exit Function
+    ElseIf Abs(A.ScreenP2.X - B.ScreenP2.X) < E And Abs(A.ScreenP2.Y - B.ScreenP2.Y) < E Then
+        BnearestThanA = A.ScreenP1.Z > B.ScreenP1.Z: Exit Function
 
     Else
 
-        Dx1 = A.sP2.X - A.sP1.X
-        DY1 = A.sP2.Y - A.sP1.Y
-        Dx2 = B.sP2.X - B.sP1.X
-        Dy2 = B.sP2.Y - B.sP1.Y
+        Dx1 = A.ScreenP2.X - A.ScreenP1.X
+        DY1 = A.ScreenP2.Y - A.ScreenP1.Y
+        Dx2 = B.ScreenP2.X - B.ScreenP1.X
+        Dy2 = B.ScreenP2.Y - B.ScreenP1.Y
 
         ' Denominator for ua and ub are the sP1me, so store this calculation
         D = (Dy2) * (Dx1) - _
@@ -339,8 +339,8 @@ Private Function BnearestThanA(A As tCapsule, B As tCapsule) As Boolean
         D = 1# / D
 
         'NA and NB are calculated as seperate values for readability
-        NA = (Dx2) * (A.sP1.Y - B.sP1.Y) - _
-             (Dy2) * (A.sP1.X - B.sP1.X)
+        NA = (Dx2) * (A.ScreenP1.Y - B.ScreenP1.Y) - _
+             (Dy2) * (A.ScreenP1.X - B.ScreenP1.X)
 
 
         ' Calculate the intermediate fractional point that the lines potentially intersect.
@@ -352,18 +352,18 @@ Private Function BnearestThanA(A As tCapsule, B As tCapsule) As Boolean
         If uA >= 0# Then
             If uA <= 1# Then
                 ' Calculate the intermediate fractional point that the lines potentially intersect.
-                NB = (Dx1) * (A.sP1.Y - B.sP1.Y) - _
-                     (DY1) * (A.sP1.X - B.sP1.X)
+                NB = (Dx1) * (A.ScreenP1.Y - B.ScreenP1.Y) - _
+                     (DY1) * (A.ScreenP1.X - B.ScreenP1.X)
 
                 uB = NB * D
                 If uB >= 0# Then
                     If uB <= 1# Then
                         Stop
-                        '                        IntersectOfLinesV3.X = A.sP1.X + (uA * Dx1)
-                        '                        IntersectOfLinesV3.Y = A.sP1.Y + (uA * DY1)
+                        '                        IntersectOfLinesV3.X = A.ScreenP1.X + (uA * Dx1)
+                        '                        IntersectOfLinesV3.Y = A.ScreenP1.Y + (uA * DY1)
                         ' Z ?
-                        BnearestThanA = A.sP1.Z + (uA * (A.sP2.Z - A.sP1.Z)) > _
-                                        B.sP1.Z + (uB * (B.sP2.Z - B.sP1.Z))    'Z of line B
+                        BnearestThanA = A.ScreenP1.Z + (uA * (A.ScreenP2.Z - A.ScreenP1.Z)) > _
+                                        B.ScreenP1.Z + (uB * (B.ScreenP2.Z - B.ScreenP1.Z))    'Z of line B
                         Exit Function
                     End If
                 End If
@@ -380,8 +380,8 @@ Public Sub ADDlineToScreen(L As tCapsule, I As Long)
     Dim Vis       As Boolean
     CAM.FarPlane = 5000
     With L
-        CAM.LineToScreen .P1, .P2, .sP1, .sP2, Vis
-
+        CAM.LineToScreen .P1, .P2, .ScreenP1, .ScreenP2, Vis
+        'Distance from camera (z) of screenP is inverse 1/
         If Vis Then
             If .Size = 0 Then .Size = 1
             NCapsulesInScreen = NCapsulesInScreen + 1
@@ -391,8 +391,8 @@ Public Sub ADDlineToScreen(L As tCapsule, I As Long)
             End If
             .AgentIndex = I
             CAPSULES(NCapsulesInScreen) = L
-            '            CAPSULES(NCapsulesInScreen).CamD = 1# / (0.5 * (.sP1.Z + .sP2.Z))
-            CAPSULES(NCapsulesInScreen).CamD = 1# / (Max(.sP1.Z, .sP2.Z)) - .Size * 0.5
+            '            CAPSULES(NCapsulesInScreen).CamD = 1# / (0.5 * (.ScreenP1.Z + .ScreenP2.Z))
+            CAPSULES(NCapsulesInScreen).CamD = 1# / (Max(.ScreenP1.Z, .ScreenP2.Z)) - .Size * 0.5
 
         End If
 
@@ -402,7 +402,7 @@ Public Sub ADDlineToScreen(L As tCapsule, I As Long)
             CAM.FarPlane = 400
             Vis = False
             CAM.LineToScreen vec3(.P1.X + .P1.Y * 1.3, 0, .P1.Z + .P1.Y * 1.2), _
-                             vec3(.P2.X + .P2.Y * 1.3, 0, .P2.Z + .P2.Y * 1.2), .sP1, .sP2, Vis
+                             vec3(.P2.X + .P2.Y * 1.3, 0, .P2.Z + .P2.Y * 1.2), .ScreenP1, .ScreenP2, Vis
 
             If Vis Then
                 If L.Size = 0 Then .Size = 1
@@ -412,12 +412,12 @@ Public Sub ADDlineToScreen(L As tCapsule, I As Long)
                     ReDim Preserve CAPSULES(MaxNCapsulesInScreen)
                 End If
                 .AgentIndex = -1
-                .sP1.Z = .sP1.Z * 0.5
-                .sP2.Z = .sP2.Z * 0.5
+                .ScreenP1.Z = .ScreenP1.Z * 0.5
+                .ScreenP2.Z = .ScreenP2.Z * 0.5
 
                 CAPSULES(NCapsulesInScreen) = L
-                '                CAPSULES(NCapsulesInScreen).CamD = 2 * (1# / (0.5 * (.sP1.Z + .sP2.Z)))
-                CAPSULES(NCapsulesInScreen).CamD = 2 * (1# / (Max(.sP1.Z, .sP2.Z)) - .Size * 0.5)
+                '                CAPSULES(NCapsulesInScreen).CamD = 2 * (1# / (0.5 * (.ScreenP1.Z + .ScreenP2.Z)))
+                CAPSULES(NCapsulesInScreen).CamD = 2 * (1# / (Max(.ScreenP1.Z, .ScreenP2.Z)) - .Size * 0.5)
             End If
             '    --------------------------
         End If
@@ -461,9 +461,8 @@ Public Sub QuickSortCapsules(List() As tCapsule, ByVal min As Long, ByVal Max As
         '        Do While Low < Max And (BnearestThanA(List(Low), TestCapsule)): Low = Low + 1&: Loop
         '        Do While high > min And Not (BnearestThanA(List(high), TestCapsule)): high = high - 1&: Loop
 
-        Do While Low < Max And (List(Low).CamD > TestDist): Low = Low + 1&: Loop
-        Do While high > min And (List(high).CamD < TestDist): high = high - 1&: Loop
-
+        Do While (List(Low).CamD > TestDist): Low = Low + 1&: Loop
+        Do While (List(high).CamD < TestDist): high = high - 1&: Loop
 
 
         If (Low <= high) Then
@@ -477,3 +476,36 @@ Public Sub QuickSortCapsules(List() As tCapsule, ByVal min As Long, ByVal Max As
 
 
 End Sub
+
+
+
+Public Function VectorReflect(VX#, VY#, WallX#, WallY#, rX#, rY#)
+'Function returning the reflection of one vector around another.
+'it's used to calculate the rebound of a Vector on another Vector
+'Vector "V" represents current velocity of a point.
+'Vector "Wall" represent the angle of a wall where the point Bounces.
+'Returns the vector velocity that the point takes after the rebound
+
+    Dim vDot      As Double
+    Dim D         As Double
+    Dim NwX       As Double
+    Dim NwY       As Double
+
+    '    D = (WallX * WallX + WallY * WallY)
+    '    If D = 0 Then Exit Function
+    '    D = 1 / Sqr(D)
+    D = 1
+
+    NwX = WallX * D
+    NwY = WallY * D
+    '    'Vect2 = Vect1 - 2 * WallN * (WallN DOT Vect1)
+    'vDot = N.DotV(V)
+    vDot = VX * NwX + VY * NwY
+
+    NwX = NwX * vDot * 2
+    NwY = NwY * vDot * 2
+
+    rX = -VX + NwX
+    rY = -VY + NwY
+
+End Function

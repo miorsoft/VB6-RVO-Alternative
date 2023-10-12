@@ -50,11 +50,8 @@ Option Explicit
 
 
 
-
-
-
-
 Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
+
 'F
 'MsgBox KeyCode
     If KeyCode = 70 Then doFRAMES = Not (doFRAMES)
@@ -62,6 +59,9 @@ Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
 
     'C
     If KeyCode = 67 Then CameraMode = Not (CameraMode)
+
+    If KeyCode = 37 Then FOLLOW = FOLLOW - 1: If FOLLOW < 1 Then FOLLOW = NA
+    If KeyCode = 39 Then FOLLOW = FOLLOW + 1: If FOLLOW > NA Then FOLLOW = 1
 
 End Sub
 
@@ -73,9 +73,9 @@ Private Sub Form_Load()
     If Dir(App.Path & "\Frames\*.*", vbArchive) <> vbNullString Then Kill App.Path & "\Frames\*.*"
 
 
-    '    ' UNCOMMENT For FRAMES
-    '    Me.ScaleHeight = 576 - 12     ' 640
-    '    Me.ScaleWidth = 1024 - 36     '852 ' Round(Me.ScaleHeight * 4 / 3)
+'    '    ' UNCOMMENT For FRAMES
+'    Me.ScaleHeight = 576 - 12     ' 640
+'    Me.ScaleWidth = 1024 - 36     '852 ' Round(Me.ScaleHeight * 4 / 3)
 
 
 
