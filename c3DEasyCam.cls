@@ -141,8 +141,8 @@ End Sub
 
 
 Private Sub UPDATE(Optional UpdatePitchYawValues As Boolean = False)
-' Call this every time you change Camera Position or Target !!!
-'    // camera matrix
+    ' Call this every time you change Camera Position or Target !!!
+    '    // camera matrix
     Dim D         As tVec3
 
     ' Left Hand
@@ -209,7 +209,7 @@ Public Sub SetRotation(ByVal Yaw As Double, ByVal Pitch As Double)
 End Sub
 
 Friend Function PointToScreenWDCam(WorldPos As tVec3, ProjectedDistFromCam As Double) As tVec3
-'Point to Screen with Distance^2 From Cam
+    'Point to Screen with Distance^2 From Cam
     Dim p         As tVec3
     Dim S         As tVec3
     Dim IZ        As Double

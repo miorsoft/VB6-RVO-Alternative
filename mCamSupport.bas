@@ -35,9 +35,6 @@ Public CAM        As c3DEasyCam
 
 
 
-
-
-
 Public Function vec3(X As Double, Y As Double, Z As Double) As tVec3
     With vec3
         .X = X
@@ -139,7 +136,7 @@ Public Function SUM3v(V As tVec3, A As Double) As tVec3
 End Function
 
 Public Function RayPlaneIntersect(rayVector As tVec3, rayPoint As tVec3, PlaneNormal As tVec3, planePoint As tVec3) As tVec3
-'https://rosettacode.org/wiki/Find_the_intersection_of_a_line_with_a_plane#C.23
+    'https://rosettacode.org/wiki/Find_the_intersection_of_a_line_with_a_plane#C.23
 
     Dim Diff      As tVec3
     Dim prod1     As Double
@@ -175,53 +172,99 @@ Public Function min(A As Double, B As Double) As Double
     If B < min Then min = B
 End Function
 
+''https://iquilezles.org/articles/simpleik/
+'Public Function IKSolve(ByRef C1 As tVec3, _
+ '                        ByRef C2 As tVec3, _
+ '                        ByRef R1 As Double, _
+ '                        ByRef R2 As Double, _
+ '                        ByRef Sol1 As tVec3, _
+ '                        ByRef Sol2 As tVec3) As Boolean
+''
+''{
+''    float h = dot(p,p);
+''    float w = h + r1*r1 - r2*r2;
+''    float s = max(4.0*r1*r1*h - w*w,0.0);
+''    return (w*p + vec2(-p.y,p.x)*sqrt(s)) * 0.5/h;
+''}
+'    Dim p         As tVec3
+'    Dim H#, W#, S#
+'
+'    p = DIFF3(C1, C2)
+'    p.Z = 0
+'
+'    H = DOT3(p, p)
+'    W = H + R1 * R1 - R2 * R2
+'    S = 4# * R1 * R1 * H - W * W: If S < 0# Then S = 0#
+'
+'    S = Sqr(S)
+'    H = 0.5 / H
+'
+'    Sol1.X = (p.X * W - p.Y * S) * H
+'    Sol1.Y = (p.Y * W + p.X * S) * H
+'    If Sol1.X > -0.99 Then IKSolve = True
+'    Sol1.X = Sol1.X + C2.X
+'    Sol1.Y = Sol1.Y + C2.Y
+'
+'
+'    Sol2.X = (p.X * W + p.Y * S) * H
+'    Sol2.Y = (p.Y * W - p.X * S) * H
+'    If Sol2.X > -0.99 Then IKSolve = True
+'    Sol2.X = Sol2.X + C2.X
+'    Sol2.Y = Sol2.Y + C2.Y
+'
+'    IKSolve = True
+'
+'
+'End Function
+
 'https://iquilezles.org/articles/simpleik/
-Public Function IKSolve(ByRef C1 As tVec3, _
-                        ByRef C2 As tVec3, _
+Public Function IKSolve(ByRef Origin As tVec3, _
+                        ByRef Target As tVec3, _
                         ByRef R1 As Double, _
                         ByRef R2 As Double, _
                         ByRef Sol1 As tVec3, _
                         ByRef Sol2 As tVec3) As Boolean
-'
-'{
-'    float h = dot(p,p);
-'    float w = h + r1*r1 - r2*r2;
-'    float s = max(4.0*r1*r1*h - w*w,0.0);
-'    return (w*p + vec2(-p.y,p.x)*sqrt(s)) * 0.5/h;
-'}
-    Dim p         As tVec3
+    ' NOTE: Target will change position if no solution found!
+    Dim pX#, pY#
     Dim H#, W#, S#
 
-    p = DIFF3(C1, C2)
-    p.Z = 0
+    pX = Origin.X - Target.X
+    pY = Origin.Y - Target.Y
 
+    H = pX * pX + pY * pY
+    W = H + R2 * R2 - R1 * R1
+    S = 4# * R2 * R2 * H - W * W
 
-    H = DOT3(p, p)
-    W = H + R1 * R1 - R2 * R2
-    S = 4# * R1 * R1 * H - W * W: If S < 0# Then S = 0#
-
-    S = Sqr(S)
-    H = 0.5 / H
-
-    Sol1.X = (p.X * W - p.Y * S) * H
-    Sol1.Y = (p.Y * W + p.X * S) * H
-    If Sol1.X > -0.99 Then IKSolve = True
-    Sol1.X = Sol1.X + C2.X
-    Sol1.Y = Sol1.Y + C2.Y
-
-
-    Sol2.X = (p.X * W + p.Y * S) * H
-    Sol2.Y = (p.Y * W - p.X * S) * H
-    If Sol2.X > -0.99 Then IKSolve = True
-    Sol2.X = Sol2.X + C2.X
-    Sol2.Y = Sol2.Y + C2.Y
-
-    IKSolve = True
-
-
+    If S > 0# Then
+        S = Sqr(S)
+        H = 0.5 / H
+        Sol1.X = Target.X + (pX * W - pY * S) * H
+        Sol1.Y = Target.Y + (pY * W + pX * S) * H
+        Sol2.X = Target.X + (pX * W + pY * S) * H
+        Sol2.Y = Target.Y + (pY * W - pX * S) * H
+        IKSolve = True
+    Else
+        'No solution (so Move target and get Solutions [by reexre])
+        H = 1# / Sqr(H)
+        pX = pX * H: pY = pY * H
+        Sol1.X = Origin.X - pX * R1
+        Sol1.Y = Origin.Y - pY * R1
+        Sol2 = Sol1
+        If W > 0# Then            'Target too far
+            Target.X = Origin.X - pX * (R1 + R2)
+            Target.Y = Origin.Y - pY * (R1 + R2)
+        Else                      'Target too close to Origin
+            Target.X = Sol1.X + pX * R2
+            Target.Y = Sol1.Y + pY * R2
+        End If
+    End If
+    '{
+    '    float h = dot(p,p);
+    '    float w = h + r2*r2 - r1*r1;
+    '    float s = max(4.0*r2*r2*h - w*w,0.0);
+    '    return (w*p + vec2(-py,px)*sqrt(s)) * 0.5/h;
+    '}
 End Function
-
-
 
 
 
@@ -447,7 +490,7 @@ End Sub
 
 Public Sub QuickSortCapsules(List() As tCapsule, ByVal min As Long, ByVal Max As Long)
 
-' FROM HI to LOW  'https://www.vbforums.com/showthread.php?11192-quicksort
+    ' FROM HI to LOW  'https://www.vbforums.com/showthread.php?11192-quicksort
     Dim Low As Long, high As Long, temp As tCapsule, TestCapsule As tCapsule
     Dim TestDist#
     'Debug.Print min, max
@@ -480,11 +523,11 @@ End Sub
 
 
 Public Function VectorReflect(VX#, VY#, WallX#, WallY#, rX#, rY#)
-'Function returning the reflection of one vector around another.
-'it's used to calculate the rebound of a Vector on another Vector
-'Vector "V" represents current velocity of a point.
-'Vector "Wall" represent the angle of a wall where the point Bounces.
-'Returns the vector velocity that the point takes after the rebound
+    'Function returning the reflection of one vector around another.
+    'it's used to calculate the rebound of a Vector on another Vector
+    'Vector "V" represents current velocity of a point.
+    'Vector "Wall" represent the angle of a wall where the point Bounces.
+    'Returns the vector velocity that the point takes after the rebound
 
     Dim vDot      As Double
     Dim D         As Double

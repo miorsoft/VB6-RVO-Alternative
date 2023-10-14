@@ -140,9 +140,9 @@ Public Ncollisions As Long
 
 Private Sub SetColor(Avoidance#, MaxVel#, R, G#, B#)
 
-'G = (Avoidance - minAvoid) / (OneMinusMinAvoid)    ': .cB = 0.3
-'R = 1 - G
-'B = (MaxVel / GlobMaxSpeed - 0.55) / 0.45
+    'G = (Avoidance - minAvoid) / (OneMinusMinAvoid)    ': .cB = 0.3
+    'R = 1 - G
+    'B = (MaxVel / GlobMaxSpeed - 0.55) / 0.45
 
     G = (Avoidance / KglobAvoidance - minAvoid) / (OneMinusMinAvoid)    ': .cB = 0.3
     R = 1 - G
@@ -474,7 +474,7 @@ End Sub
 
 Private Sub CalShoulders()
 
-'Compute Shoulder/chest/arm direction by smoothing Normalized Velocity
+    'Compute Shoulder/chest/arm direction by smoothing Normalized Velocity
     Dim I         As Long
     Dim D#, DX#, DY#
     Dim ANG#
@@ -648,6 +648,8 @@ Public Sub MOVE()
             If D < 25 Then        ' TARGET REACHED
                 .NReachedTargets = .NReachedTargets + 1&
 
+                SetColor .Avoidance, .maxV, .cR, .cG, .cB
+
                 Select Case MODE
                 Case 0            '2 directions
                     ' .TX = (0.1 + 0.8 * Rnd) * WorldW
@@ -658,7 +660,6 @@ Public Sub MOVE()
                         .TX = WorldW * 0.1
 
                     End If
-                    SetColor .Avoidance, .maxV, .cR, .cG, .cB
 
                 Case 1            'diagonal
                     '                '-----
@@ -680,11 +681,6 @@ Public Sub MOVE()
                         End If
 
                     End If
-                    SetColor .Avoidance, .maxV, .cR, .cG, .cB
-                    '                '-----
-
-
-
 
                 Case 2            'Horiz / VERT
                     If I Mod 2 = 0 Then
@@ -703,7 +699,6 @@ Public Sub MOVE()
                         End If
                         If .TX < WorldW * 0.2 Or .TX > WorldW * 0.8 Then .TX = (0.2 + Rnd * 0.6) * WorldW
                     End If
-                    SetColor .Avoidance, .maxV, .cR, .cG, .cB
                 Case 3
                     'CIRCLE
                     .TX = WorldW * 0.5 - (.TX - WorldW * 0.5)
@@ -760,12 +755,9 @@ Public Sub MOVE()
                         If .TX < WorldW * 0.4 Or .TX > WorldW * 0.6 Then .TX = (0.4 + Rnd * 0.2) * WorldW
 
                     End If
-                    SetColor .Avoidance, .maxV, .cR, .cG, .cB
                 Case 5            'RANDOM
                     .TX = WorldW * Rnd
                     .TY = WorldH * Rnd
-
-                    SetColor .Avoidance, .maxV, .cR, .cG, .cB
 
 
                 Case 6            'TARGETS
@@ -775,8 +767,6 @@ Public Sub MOVE()
                     A = 5000 * PI2 / R
                     .TX = ArrayOfTargets(AgentTarget(I)).X + Cos(A) * R
                     .TY = ArrayOfTargets(AgentTarget(I)).Y + Sin(A) * R
-
-
 
                 End Select
 
@@ -805,7 +795,7 @@ Public Sub MOVE()
 
             ''' [AAA]
             '...... Dont' Allow to move backwards
-            Dim rX#, rY#
+            ''Dim rX#, rY#
             ''If .vX * .ShoulderX + .vY * .ShoulderY < 0 Then
             '''If I = FOLLOW Then Stop
             ''D = Sqr(.vX * .vX + .vY * .vY)
@@ -817,10 +807,6 @@ Public Sub MOVE()
             ''.vY = -.ShoulderX * D
             ''End If
             ''End If
-
-
-
-
 
             .X = .X + .VX
             .Y = .Y + .VY
@@ -1268,10 +1254,10 @@ End Sub
 'End Sub
 
 Private Sub TransformLine(P1 As tVec3, P2 As tVec3, CosA#, SinA#, X#, Y#)
-'    RotateXZ P1, cosA, sinA
-'    RotateXZ P2, cosA, sinA
-'    AddXZ P1, X, Y
-'    AddXZ P2, X, Y
+    '    RotateXZ P1, cosA, sinA
+    '    RotateXZ P2, cosA, sinA
+    '    AddXZ P1, X, Y
+    '    AddXZ P2, X, Y
     Dim c         As tVec3: c = P1
     P1.X = c.X * CosA + c.Z * -SinA + X
     P1.Z = c.X * SinA + c.Z * CosA + Y
