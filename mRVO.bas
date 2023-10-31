@@ -5,8 +5,8 @@ Option Explicit
 Public Type tAgent
     X             As Double
     Y             As Double
-    VX            As Double
-    VY            As Double
+    vX            As Double
+    vY            As Double
     nVX           As Double       'Normalized Vel
     nVY           As Double
 
@@ -22,7 +22,7 @@ Public Type tAgent
     cG            As Double
     cB            As Double
 
-    V             As Double
+    v             As Double
 
     SciaX()       As Double
     SciaY()       As Double
@@ -36,14 +36,21 @@ Public Type tAgent
 
     Walked        As Double       'Walked Distance
 
+    'VTTS As Double
+
+
+    fMinD         As Double
+    fTargTo       As Long
+    fAgentFrom    As Long
+
 End Type
 
 
 
 
 Public Type tPairInfo
-    A             As Long
-    B             As Long
+    a             As Long
+    b             As Long
     chkX          As Double
     chkY          As Double
     chkX2         As Double
@@ -98,11 +105,11 @@ Private Frame     As Long
 
 Private CNT       As Long
 
-Private Const ControlDist As Double = 19    ' 17    '17
+Public Const ControlDist As Double = 28    ' 28.5 '19   ' 17    '17
 Private Const ControlDist2 As Double = ControlDist * ControlDist
 Private Const invControlDist As Double = 1 / ControlDist
 
-Public Const VMUL As Double = 20  '21    '17
+Public Const VMUL As Double = 14  ' 27  '20  '21    '17
 
 Public Const GridSize As Double = 2 * GlobMaxSpeed * VMUL + ControlDist    '40    '35 '25
 
@@ -116,7 +123,10 @@ Private Const AgentsMinDist2 As Double = AgentsMinDist * AgentsMinDist
 
 Public MODE       As Long
 Public FOLLOW     As Long
-
+Public FollowMode As Long
+Public Const NFollowModes As Long = 10
+Public FollowDesc As String
+Public MAXTR      As Long
 'Private Const Zoom As Double = 1.3    '1.4
 'Private Const InvZOOM As Double = 1 / Zoom
 
@@ -125,8 +135,8 @@ Private Const minAvoid As Double = 0.5    '25 '0.2
 Private Const OneMinusMinAvoid As Double = 1 - minAvoid
 
 ' FOR MODE 6
-Private ArrayOfTargets() As tVec3
-Private NTargets  As Long
+Public ArrayOfTargets() As tVec3
+Public NTargets   As Long
 Private AgentTarget() As Long
 
 Public RunningNotInIDE As Boolean
@@ -138,15 +148,15 @@ Public RVONpairs  As Long
 Public Ncollisions As Long
 
 
-Private Sub SetColor(Avoidance#, MaxVel#, R, G#, B#)
+Private Sub SetColor(Avoidance#, MaxVel#, r, G#, b#)
 
     'G = (Avoidance - minAvoid) / (OneMinusMinAvoid)    ': .cB = 0.3
     'R = 1 - G
     'B = (MaxVel / GlobMaxSpeed - 0.55) / 0.45
 
     G = (Avoidance / KglobAvoidance - minAvoid) / (OneMinusMinAvoid)    ': .cB = 0.3
-    R = 1 - G
-    B = (MaxVel / GlobMaxSpeed - 0.5) / 0.5
+    r = 1 - G
+    b = (MaxVel / GlobMaxSpeed - 0.5) / 0.5
 
 End Sub
 
@@ -171,7 +181,7 @@ Public Sub Init_RVO(NAG As Long)
 
 
             .maxV = GlobMaxSpeed * (0.55 + 0.45 * Rnd)
-            If Rnd < 0.01 Then .maxV = 0.2 * GlobMaxSpeed
+            '            If Rnd < 0.01 Then .maxV = 0.2 * GlobMaxSpeed
 
             .maxV2 = .maxV * .maxV
 
@@ -222,8 +232,8 @@ Public Sub Init_RVO(NAG As Long)
 
     GRID.INIT WorldW * 1, WorldH * 1, GridSize
 
-    FOLLOWworst
-    '    FOLLOWBest
+    '    FOLLOWworstrule
+    FOLLOW = FOLLOWbestRule
 
 End Sub
 
@@ -233,7 +243,7 @@ Public Sub DRAW()
     Dim J         As Long
     Dim K         As Long
     Dim ANG       As Double
-    Dim DX#, DY#, D#
+    Dim dx#, dy#, d#
 
     Dim X#, Y#
     Const Zoom    As Double = 1
@@ -275,7 +285,7 @@ Public Sub DRAW()
             CC.Arc .X, .Y, 3      ' 3.5
             CC.Fill
 
-            ANG = Atan2(.VX, .VY)
+            ANG = Atan2(.vX, .vY)
             .nVX = Cos(ANG)
             .nVY = Sin(ANG)
 
@@ -286,14 +296,14 @@ Public Sub DRAW()
             CC.Fill
 
             ' SHOULDERS-----
-            DX = .ShoulderX * 0.87 + 0.13 * .nVX
-            DY = .ShoulderY * 0.87 + 0.13 * .nVY
-            D = 1# / Sqr(DX * DX + DY * DY): DX = DX * D: DY = DY * D
-            CC.MoveTo .X - DY * 4, .Y + DX * 4
-            CC.LineTo .X + DY * 4, .Y - DX * 4
+            dx = .ShoulderX * 0.87 + 0.13 * .nVX
+            dy = .ShoulderY * 0.87 + 0.13 * .nVY
+            d = 1# / Sqr(dx * dx + dy * dy): dx = dx * d: dy = dy * d
+            CC.MoveTo .X - dy * 4, .Y + dx * 4
+            CC.LineTo .X + dy * 4, .Y - dx * 4
             CC.Stroke
-            .ShoulderX = DX
-            .ShoulderY = DY
+            .ShoulderX = dx
+            .ShoulderY = dy
             '-----------------
 
 
@@ -368,13 +378,13 @@ Private Sub Draw_PAIR()
     CC.SetLineWidth 1
 
     For I = 1 To RVONpairs
-        If PairInfo(I).A = FOLLOW Or PairInfo(I).B = FOLLOW Then
+        If PairInfo(I).a = FOLLOW Or PairInfo(I).b = FOLLOW Then
             If PairInfo(I).Enabled Then
 
                 With PairInfo(I)
 
-                    If .B = FOLLOW Then    'SWAPS
-                        J = .B: .B = .A: .A = J
+                    If .b = FOLLOW Then    'SWAPS
+                        J = .b: .b = .a: .a = J
                         X = .bVX: .bVX = .aVX: .aVX = X
                         Y = .bVY: .bVY = .aVY: .aVY = Y
                         X = .bVXch: .bVXch = .aVXch: .aVXch = X
@@ -383,28 +393,28 @@ Private Sub Draw_PAIR()
                         Y = .chkY: .chkY = .chkY2: .chkY2 = Y
                     End If
 
-                    CC.SetSourceRGB Agent(.A).cR, Agent(.A).cG, Agent(.A).cB
+                    CC.SetSourceRGB Agent(.a).cR, Agent(.a).cG, Agent(.a).cB
                     '                    CC.Arc Agent(.A).X, Agent(.A).Y, AgentsMinDist * 0.5
                     '                    CC.Stroke
 
-                    CC.MoveTo Agent(.A).X, Agent(.A).Y
+                    CC.MoveTo Agent(.a).X, Agent(.a).Y
                     CC.RelLineTo .aVX, .aVY
                     CC.Stroke
 
-                    CC.MoveTo Agent(.A).X + .aVX, Agent(.A).Y + .aVY
+                    CC.MoveTo Agent(.a).X + .aVX, Agent(.a).Y + .aVY
                     CC.RelLineTo .aVXch * VMUL * 50, .aVYch * VMUL * 50
                     CC.Stroke
                     '-----------------
 
-                    CC.SetSourceRGB Agent(.B).cR, Agent(.B).cG, Agent(.B).cB
+                    CC.SetSourceRGB Agent(.b).cR, Agent(.b).cG, Agent(.b).cB
                     '                    CC.Arc Agent(.B).X, Agent(.B).Y, AgentsMinDist * 0.5
                     '                    CC.Stroke
 
-                    CC.MoveTo Agent(.B).X, Agent(.B).Y
+                    CC.MoveTo Agent(.b).X, Agent(.b).Y
                     CC.RelLineTo .bVX, .bVY
                     CC.Stroke
 
-                    CC.MoveTo Agent(.B).X + .bVX, Agent(.B).Y + .bVY
+                    CC.MoveTo Agent(.b).X + .bVX, Agent(.b).Y + .bVY
                     CC.RelLineTo .bVXch * VMUL * 50, .bVYch * VMUL * 50
                     CC.Stroke
 
@@ -416,9 +426,9 @@ Private Sub Draw_PAIR()
 
 
                     '.................................
-                    CC.SetSourceRGB 0.55, 0.55, 0.55
+                    CC.SetSourceRGB 0.75, 0.75, 0.75
                     ' CC.MoveTo Agent(.A).X, Agent(.A).Y
-                    CC.MoveTo Agent(.B).X, Agent(.B).Y
+                    CC.MoveTo Agent(.b).X, Agent(.b).Y
                     CC.LineTo .chkX, .chkY: CC.Stroke
 
 
@@ -448,7 +458,7 @@ Private Sub Draw_PAIR()
         CC.Arc Agent(J).X, Agent(J).Y, AgentsMinDist * 0.5
         CC.Fill
         CC.MoveTo Agent(J).X, Agent(J).Y
-        CC.RelLineTo Agent(J).VX * VMUL, Agent(J).VY * VMUL
+        CC.RelLineTo Agent(J).vX * VMUL, Agent(J).vY * VMUL
         CC.Stroke
 
         '        CC.MoveTo Agent(J).X - Agent(J).ShoulderY * AgentsMinDist * 0.8, Agent(J).Y + Agent(J).ShoulderX * AgentsMinDist * 0.8
@@ -460,6 +470,9 @@ Private Sub Draw_PAIR()
         CC.Stroke
     Next
     CC.Restore
+
+
+    OUTINFO
 
     fMain.Picture = SRF.Picture
 
@@ -476,18 +489,18 @@ Private Sub CalShoulders()
 
     'Compute Shoulder/chest/arm direction by smoothing Normalized Velocity
     Dim I         As Long
-    Dim D#, DX#, DY#
+    Dim d#, dx#, dy#
     Dim ANG#
     For I = 1 To NA
         With Agent(I)
             ' SHOULDERS-----
-            D = Sqr(.VX * .VX + .VY * .VY)
-            .V = D
+            d = Sqr(.vX * .vX + .vY * .vY)
+            .v = d
 
-            .Walked = .Walked + D + 0.05
-            If D Then
-                D = 1# / D
-                .nVX = .VX * D: .nVY = .VY * D
+            .Walked = .Walked + d + 0.05
+            If d Then
+                d = 1# / d
+                .nVX = .vX * d: .nVY = .vY * d
                 '                '                'DX = .ShoulderX * 0.87 + 0.13 * .nVX
                 '                '                'DY = .ShoulderY * 0.87 + 0.13 * .nVY
                 '                '                DX = .ShoulderX * 0.85 + 0.15 * .nVX
@@ -500,14 +513,14 @@ Private Sub CalShoulders()
                 '                                .ShoulderY = DY
             End If
             '------------ SHOLDERS 2ND mode
-            .ShoulderX = .ShoulderX * 0.7 + 0.3 * .VX * INVGlobMaxSpeed
-            .ShoulderY = .ShoulderY * 0.7 + 0.3 * .VY * INVGlobMaxSpeed
+            .ShoulderX = .ShoulderX * 0.7 + 0.3 * .vX * INVGlobMaxSpeed
+            .ShoulderY = .ShoulderY * 0.7 + 0.3 * .vY * INVGlobMaxSpeed
 
-            D = .ShoulderX * .ShoulderX + .ShoulderY * .ShoulderY
-            If D Then
-                D = 1# / Sqr(D)
-                .ShoulderX = .ShoulderX * D
-                .ShoulderY = .ShoulderY * D
+            d = .ShoulderX * .ShoulderX + .ShoulderY * .ShoulderY
+            If d Then
+                d = 1# / Sqr(d)
+                .ShoulderX = .ShoulderX * d
+                .ShoulderY = .ShoulderY * d
             End If
             '-----------------
         End With
@@ -519,32 +532,60 @@ Public Sub draw_CAMERA()
     Dim L         As tCapsule
     Dim Vis       As Boolean
     Dim R1 As tVec3, R2 As tVec3
-    Dim D#
+    Dim d#
     Const MUL     As Double = 400
 
     Dim Kcam      As Double
-    Dim DX#, DY#, cX#, cY#
+    Dim dx#, dy#, cX#, cY#
+    Dim DOT#
+    Dim tCamLookAt As tVec3
 
     If FOLLOW Then
-        'CAM.lookat = vec3(Agent(FOLLOW).X, 0, Agent(FOLLOW).Y)
-        '        CAM.SetPositionAndLookAt vec3(WorldW * 0.5, -100, WorldH * 0.5), vec3(Agent(FOLLOW).X, 0, Agent(FOLLOW).Y)
-        cX = CAM.Position.X
-        cY = CAM.Position.Z
-        DX = Agent(FOLLOW).X - cX
-        DY = Agent(FOLLOW).Y - cY
-        '        If DX * DX + DY * DY > 21100 Then
-        '            cX = cX * 0.992 + 0.008 * Agent(FOLLOW).X
-        '            cY = cY * 0.992 + 0.008 * Agent(FOLLOW).Y
-        '        End If
-        If DX * DX + DY * DY > 15000 Then
-            cX = cX * 0.992 + 0.008 * Agent(FOLLOW).X
-            cY = cY * 0.992 + 0.008 * Agent(FOLLOW).Y
+
+        tCamLookAt = CAM.lookat
+
+
+
+        If MODE <> 7 Then
+
+            'CAM.lookat = vec3(Agent(FOLLOW).X, 0, Agent(FOLLOW).Y)
+            '        CAM.SetPositionAndLookAt vec3(WorldW * 0.5, -100, WorldH * 0.5), vec3(Agent(FOLLOW).X, 0, Agent(FOLLOW).Y)
+            cX = CAM.Position.X
+            cY = CAM.Position.Z
+            dx = Agent(FOLLOW).X - cX
+            dy = Agent(FOLLOW).Y - cY
+            '        If DX * DX + DY * DY > 21100 Then
+            '            cX = cX * 0.992 + 0.008 * Agent(FOLLOW).X
+            '            cY = cY * 0.992 + 0.008 * Agent(FOLLOW).Y
+            '        End If
+            If dx * dx + dy * dy > 15000 Then
+                cX = cX * 0.992 + 0.008 * Agent(FOLLOW).X
+                cY = cY * 0.992 + 0.008 * Agent(FOLLOW).Y
+            End If
+            '        CAM.SetPositionAndLookAt vec3(cX, -100, cY), vec3(Agent(FOLLOW).X, 0, Agent(FOLLOW).Y)
+            CAM.SetPositionAndLookAt vec3(cX, -85, cY), _
+                                     vec3(tCamLookAt.X * 0.8 + 0.2 * Agent(FOLLOW).X, -5#, tCamLookAt.Z * 0.8 + 0.2 * Agent(FOLLOW).Y)
+
+        Else
+
+            cX = CAM.Position.X
+            cY = CAM.Position.Z
+            dx = Agent(FOLLOW).X - cX
+            dy = Agent(FOLLOW).Y - cY
+            '        If DX * DX + DY * DY > 21100 Then
+            '            cX = cX * 0.992 + 0.008 * Agent(FOLLOW).X
+            '            cY = cY * 0.992 + 0.008 * Agent(FOLLOW).Y
+            '        End If
+            If dx * dx + dy * dy > 15000 Then
+                cX = cX * 0.992 + 0.008 * Agent(FOLLOW).X
+                cY = cY * 0.992 + 0.008 * Agent(FOLLOW).Y
+            End If
+            '        CAM.SetPositionAndLookAt vec3(cX, -100, cY), vec3(Agent(FOLLOW).X, 0, Agent(FOLLOW).Y)
+            CAM.SetPositionAndLookAt vec3(cX, -160 * 2, cY), _
+                                     vec3(tCamLookAt.X * 0.85 + 0.15 * Agent(FOLLOW).X, 0, tCamLookAt.Z * 0.85 + 0.15 * Agent(FOLLOW).Y)
+
         End If
-        '        CAM.SetPositionAndLookAt vec3(cX, -100, cY), vec3(Agent(FOLLOW).X, 0, Agent(FOLLOW).Y)
-        CAM.SetPositionAndLookAt vec3(cX, -85, cY), vec3(Agent(FOLLOW).X, 0, Agent(FOLLOW).Y)
-
     End If
-
 
 
 
@@ -561,7 +602,8 @@ Public Sub draw_CAMERA()
     If NCapsulesInScreen Then QuickSortCapsules CAPSULES(), 1, NCapsulesInScreen
 
 
-    CC.SetSourceRGB 0.12, 0.2, 0.12: CC.Paint
+    '    CC.SetSourceRGB 0.12, 0.2, 0.12: CC.Paint
+    CC.SetSourceRGB 0.13, 0.216, 0.13: CC.Paint
 
 
     '--------- GIRD
@@ -569,16 +611,16 @@ Public Sub draw_CAMERA()
     CC.SetLineWidth 1.5
     CC.SetSourceRGB 0.25, 0.25, 0.25
     '....................................
-    For DX = 0 To WorldW Step GridSize
-        CAM.LineToScreen vec3(DX, 0, 0), vec3(DX, 0, WorldH), R1, R2, Vis
+    For dx = 0 To WorldW Step GridSize
+        CAM.LineToScreen vec3(dx, 0, 0), vec3(dx, 0, WorldH), R1, R2, Vis
         If Vis Then
             CC.MoveTo R1.X, R1.Y
             CC.LineTo R2.X, R2.Y
             CC.Stroke
         End If
     Next
-    For DY = 0 To WorldH Step GridSize
-        CAM.LineToScreen vec3(0, 0, DY), vec3(WorldW, 0, DY), R1, R2, Vis
+    For dy = 0 To WorldH Step GridSize
+        CAM.LineToScreen vec3(0, 0, dy), vec3(WorldW, 0, dy), R1, R2, Vis
         If Vis Then
             CC.MoveTo R1.X, R1.Y
             CC.LineTo R2.X, R2.Y
@@ -598,11 +640,29 @@ Public Sub draw_CAMERA()
         With CAPSULES(I)
             If .AgentIndex > 0 Then
                 If (.ScreenP1.Z + .ScreenP2.Z) > 0.0028 Then    'Countour
+
+                    CC.SetLineWidth (.ScreenP1.Z + .ScreenP2.Z) * (MUL * .Size * Kcam + MUL * Kcam * 0.66)
                     CC.SetSourceRGB 0, 0, 0
-                    CC.SetLineWidth (.ScreenP1.Z + .ScreenP2.Z) * (MUL * .Size * Kcam + MUL * Kcam * 0.66)    ' 0.75)
                     CC.MoveTo .ScreenP1.X, .ScreenP1.Y
                     CC.LineTo .ScreenP2.X, .ScreenP2.Y
                     CC.Stroke
+                    '----------------------------
+
+                    ''                    D = (.ScreenP1.Z + .ScreenP2.Z) * MUL * .Size * Kcam
+                    ''                    CC.SetLineWidth D
+                    ''                    D = (.ScreenP1.Z + .ScreenP2.Z) * MUL * Kcam * 0.2
+                    ''                    dx = D * (CAM.Direction.X - CAM.Direction.Z)
+                    ''                    DY = D * (CAM.Direction.X + CAM.Direction.Z)
+                    ''                    CC.SetSourceRGB Agent(.AgentIndex).cR * 1.5, Agent(.AgentIndex).cG * 1.5, Agent(.AgentIndex).cB * 1.5
+                    ''                    CC.MoveTo .ScreenP1.X - dx, .ScreenP1.Y - DY
+                    ''                    CC.LineTo .ScreenP2.X - dx, .ScreenP2.Y - DY
+                    ''                    CC.Stroke
+                    ''
+                    ''                    dx = dx * 2: DY = DY * 2
+                    ''                    CC.SetSourceRGBA 0, 0, 0, 1
+                    ''                    CC.MoveTo .ScreenP1.X + dx, .ScreenP1.Y + DY
+                    ''                    CC.LineTo .ScreenP2.X + dx, .ScreenP2.Y + DY
+                    ''                    CC.Stroke
                 End If
                 CC.SetSourceRGB Agent(.AgentIndex).cR, Agent(.AgentIndex).cG, Agent(.AgentIndex).cB
                 CC.SetLineWidth (.ScreenP1.Z + .ScreenP2.Z) * MUL * .Size * Kcam
@@ -621,6 +681,24 @@ Public Sub draw_CAMERA()
         End With
     Next
 
+    'MIRINO -----------------------------------------
+    With CC
+        .Save
+        .SetDashes 40 * PI2 * 0.125, 80 * PI2 * 0.125, 80 * PI2 * 0.125
+        .SetLineWidth 1
+        .SetSourceRGBA 1, 1, 1, 0.15
+        .Arc ScreenW * 0.5, ScreenH * 0.5, 80
+        .Stroke
+        .SetDashes -12.5, 25, 25
+        .MoveTo ScreenW * 0.5, ScreenH * 0.5 - 50
+        .LineTo ScreenW * 0.5, ScreenH * 0.5 + 50: .Stroke
+        .MoveTo ScreenW * 0.5 - 50, ScreenH * 0.5
+        .LineTo ScreenW * 0.5 + 50, ScreenH * 0.5: .Stroke
+        .Restore
+
+    End With
+
+    OUTINFO
 
     fMain.Picture = SRF.Picture
 
@@ -628,25 +706,25 @@ End Sub
 
 Public Sub MOVE()
     Dim I         As Long
-    Dim DX#, DY#
+    Dim dx#, dy#
     Dim Dx2#, Dy2#
-    Dim D#
+    Dim d#
     Dim D2#
     Dim ANG#
-    Dim A#, R#
+    Dim a#, r#
 
     For I = 1 To NA
         With Agent(I)
 
-            .VX = .VX + .VXchange
-            .VY = .VY + .VYchange
+            .vX = .vX + .VXchange
+            .vY = .vY + .VYchange
 
-            DX = .TX - .X
-            DY = .TY - .Y
+            dx = .TX - .X
+            dy = .TY - .Y
 
-            D = (DX * DX + DY * DY)
-            If D < 25 Then        ' TARGET REACHED
-                .NReachedTargets = .NReachedTargets + 1&
+            d = (dx * dx + dy * dy)
+            If d < 4 Then         '25    ' TARGET REACHED
+
 
                 SetColor .Avoidance, .maxV, .cR, .cG, .cB
 
@@ -705,18 +783,18 @@ Public Sub MOVE()
                     .TY = WorldH * 0.5 - (.TY - WorldH * 0.5)
 
 
-                    D = I / NA * PI2
-                    DX = Cos(D): DY = Sin(D)
-                    If .NReachedTargets Mod 2 = 0 Then DX = -DX: DY = -DY: D = D - PI: If D < 0 Then D = D + PI2
-                    .TX = WorldW * 0.5 + WorldW * 0.4 * DX
-                    .TY = WorldH * 0.5 + WorldH * 0.4 * DY
+                    d = I / NA * PI2
+                    dx = Cos(d): dy = Sin(d)
+                    If .NReachedTargets Mod 2 = 0 Then dx = -dx: dy = -dy: d = d - PI: If d < 0 Then d = d + PI2
+                    .TX = WorldW * 0.5 + WorldW * 0.4 * dx
+                    .TY = WorldH * 0.5 + WorldH * 0.4 * dy
 
                     '.cR = 0.6
                     '.cG = D / PI2
                     '.cB = 1 - D / PI2
-                    .cR = 0.6 + 0.4 * Cos(D * 2 + PI)
-                    .cG = 0.6 + 0.4 * Cos(D * 3)
-                    .cB = 0.6 + 0.4 * Cos(D * 1 + 2)
+                    .cR = 0.6 + 0.4 * Cos(d * 2 + PI)
+                    .cG = 0.6 + 0.4 * Cos(d * 3)
+                    .cB = 0.6 + 0.4 * Cos(d * 1 + 2)
 
                     '   Case 4
 
@@ -762,32 +840,46 @@ Public Sub MOVE()
 
                 Case 6            'TARGETS
                     AgentTarget(I) = (AgentTarget(I) + 1) Mod (NTargets + 1)
-                    R = I / NA: R = Sqr(R)
-                    R = 10 + 99 * R
-                    A = 5000 * PI2 / R
-                    .TX = ArrayOfTargets(AgentTarget(I)).X + Cos(A) * R
-                    .TY = ArrayOfTargets(AgentTarget(I)).Y + Sin(A) * R
+                    r = I / NA: r = Sqr(r)
+                    '            R = 10 + 99 * R
+                    r = 4 + r * 30
+                    a = 5000 * PI2 / r
+                    .TX = ArrayOfTargets(AgentTarget(I)).X + Cos(a) * r
+                    .TY = ArrayOfTargets(AgentTarget(I)).Y + Sin(a) * r
+
+                Case 7            'Formation
+                    dx = ArrayOfTargets(I).X
+                    dy = ArrayOfTargets(I).Y
+
+                    d = Sqr(dx * dx + dy * dy)
+                    .cR = 0.65 + 0.35 * Cos(d * 1.25)
+                    .cG = 0.65 + 0.35 * Cos(d * 0.5)
+                    .cB = 0.65 + 0.35 * Sin(d * 1.1)
 
                 End Select
 
+                If MODE <> 7 Then .NReachedTargets = .NReachedTargets + 1&
             Else
                 'Slow down when about to reach target
-                DX = DX - .VX * VMUL * 1.5
-                DY = DY - .VY * VMUL * 1.5
-                D = DX * DX + DY * DY
-                D = 1# / Sqr(D)
-                DX = DX * D
-                DY = DY * D
+                dx = dx - .vX * VMUL * 1.33    ' 1.5
+                dy = dy - .vY * VMUL * 1.33    ' 1.5
+                d = dx * dx + dy * dy
+                d = 1# / Sqr(d)
+                dx = dx * d
+                dy = dy * d
 
-                .VX = .VX + DX * toTargetStrengthK * .maxV    '* 0.125
-                .VY = .VY + DY * toTargetStrengthK * .maxV
+                .vX = .vX + dx * toTargetStrengthK * .maxV    '* .VTTS
+                .vY = .vY + dy * toTargetStrengthK * .maxV    '* .VTTS
+
+
+                '.VTTS = .VTTS * 0.999 + 0.001
 
                 'control Max Speed
-                D = .VX * .VX + .VY * .VY
-                If D > .maxV2 Then
-                    D = .maxV / Sqr(D)
-                    .VX = .VX * D
-                    .VY = .VY * D
+                d = .vX * .vX + .vY * .vY
+                If d > .maxV2 Then
+                    d = .maxV / Sqr(d)
+                    .vX = .vX * d
+                    .vY = .vY * d
                 End If
 
             End If
@@ -795,21 +887,21 @@ Public Sub MOVE()
 
             ''' [AAA]
             '...... Dont' Allow to move backwards
-            ''Dim rX#, rY#
-            ''If .vX * .ShoulderX + .vY * .ShoulderY < 0 Then
-            '''If I = FOLLOW Then Stop
-            ''D = Sqr(.vX * .vX + .vY * .vY)
-            ''If .vX * .ShoulderY - .vY * .ShoulderX < 0 Then 'cross
-            ''.vX = -.ShoulderY * D
-            ''.vY = .ShoulderX * D
-            ''Else
-            ''.vX = .ShoulderY * D
-            ''.vY = -.ShoulderX * D
-            ''End If
-            ''End If
+            Dim rX#, rY#
+            '            If .VX * .ShoulderX + .VY * .ShoulderY < 0# Then  '0
+            '            'If I = FOLLOW Then Stop
+            '            D = Sqr(.VX * .VX + .VY * .VY)
+            '            If .VX * .ShoulderY - .VY * .ShoulderX < 0 Then 'cross
+            '            .VX = -.ShoulderY * D
+            '            .VY = .ShoulderX * D
+            '            Else
+            '            .VX = .ShoulderY * D
+            '            .VY = -.ShoulderX * D
+            '            End If
+            '            End If
 
-            .X = .X + .VX
-            .Y = .Y + .VY
+            .X = .X + .vX
+            .Y = .Y + .vY
 
             'keep in world
             If .X < 0# Then .X = 0#
@@ -818,10 +910,10 @@ Public Sub MOVE()
             If .Y > WorldH Then .Y = WorldH
 
             'Preserve some V Change
-            '            .VXchange = .VXchange * 0.5
-            '            .VYchange = .VYchange * 0.5
-            .VXchange = .VXchange * 0.33
-            .VYchange = .VYchange * 0.33
+            .VXchange = .VXchange * 0.5
+            .VYchange = .VYchange * 0.5
+            '            .VXchange = .VXchange * 0.33
+            '            .VYchange = .VYchange * 0.33
 
             '            .V = GlobMaxSpeed2 * 0.5 + .VX * .VX + .VY * .VY
 
@@ -842,9 +934,9 @@ Private Sub RVO()
 
     Dim P1()      As Long
     Dim P2()      As Long
-    Dim DX()      As Double
-    Dim DY()      As Double
-    Dim D()       As Double
+    Dim dx()      As Double
+    Dim dy()      As Double
+    Dim d()       As Double
 
 
     Dim CheckPosX As Double
@@ -854,7 +946,7 @@ Private Sub RVO()
     Dim NdX       As Double
     Dim NdY       As Double
 
-    Dim dd        As Double
+    Dim DD        As Double
     Dim kSpeedI   As Double
     Dim kSpeedJ   As Double
     Dim AgentsDX  As Double
@@ -875,14 +967,21 @@ Private Sub RVO()
     Ncollisions = 0
 
     GlobAVOIDMUL = GlobMaxSpeed * 0.125 * 0.85    '* 0.2    '* 5 * 2 '1.125
-    KOtherSpeed = 0.165           ' 0.22
+    KOtherSpeed = 0.1 * 2         '0.165           ' 0.22
+
+    ' With Enabled "Power 2" and Smoothstep
+    'GlobAVOIDMUL = GlobAVOIDMUL * 1.8
+
+    ' With Enabled " Power 4 "
+    GlobAVOIDMUL = GlobAVOIDMUL * 9 * 0.15 * 0.7    '' 0.16  ' 8 '7.2
+    ' Without Smoothstep and " Power 4 " less collisioons
 
     With GRID
         .ResetPoints
         For I = 1 To NA
             .InsertPoint Agent(I).X, Agent(I).Y
         Next
-        .GetPairsWDist P1(), P2(), DX(), DY(), D(), RVONpairs
+        .GetPairsWDist P1(), P2(), dx(), dy(), d(), RVONpairs
 
 
         If CameraMode Then ReDim PairInfo(RVONpairs)
@@ -892,24 +991,40 @@ Private Sub RVO()
             I = P1(pair)
             J = P2(pair)
 
-            CheckPosX = Agent(I).X + (Agent(I).VX - Agent(J).VX) * VMUL
-            CheckPosY = Agent(I).Y + (Agent(I).VY - Agent(J).VY) * VMUL
+            CheckPosX = Agent(I).X + (Agent(I).vX - Agent(J).vX) * VMUL
+            CheckPosY = Agent(I).Y + (Agent(I).vY - Agent(J).vY) * VMUL
+
+            'CheckPosX = CheckPosX + (Agent(I).VXchange - Agent(J).VXchange) * VMUL
+            'CheckPosY = CheckPosY + (Agent(I).VYchange - Agent(J).VYchange) * VMUL
+
 
             dXX = Agent(J).X - CheckPosX
             dYY = Agent(J).Y - CheckPosY
 
-            dd = dXX * dXX + dYY * dYY
-            If dd < ControlDist2 Then
+            DD = dXX * dXX + dYY * dYY
 
-                SqrDD = Sqr(dd)
+            '            DD = -sdOrientedVesica(vec3(dXX, dYY, 0), _
+                         '                                   vec3(Agent(I).vX * VMUL + Agent(J).vX * VMUL, Agent(I).vY * VMUL + Agent(J).vY * VMUL, 0), _
+                         '                                   vec3(-Agent(I).vX * VMUL - Agent(J).vX * VMUL, -Agent(I).vY * VMUL - Agent(J).vY * VMUL, 0), VMUL * 2)
+            '
+            '            If DD < 0 Then
+            '                SqrDD = DD
+            If DD < ControlDist2 Then
+                SqrDD = Sqr(DD)
 
                 'DD inverse proportional to DIST (Range 0,1)
                 'dd = 1# - SqrDD * invControlDist
                 GoingToCollide = 1# - SqrDD * invControlDist    '
 
-                ' 'smoothstep
-                GoingToCollide = GoingToCollide * GoingToCollide * (3# - 2# * GoingToCollide)
-                'GoingToCollide = GoingToCollide * GoingToCollide
+                '                '                ' 'smoothstep
+                '                '                GoingToCollide = GoingToCollide * GoingToCollide * (3# - 2# * GoingToCollide)
+                '                ' "Power "
+                ''                GoingToCollide = GoingToCollide * GoingToCollide
+                ''                '                ' "Power 4"
+                ''                GoingToCollide = GoingToCollide * GoingToCollide
+
+                '                ' "Power 3"
+                GoingToCollide = GoingToCollide * GoingToCollide * GoingToCollide
 
                 'Normalize dXX,dYY and multiply by DD
                 SqrDD = 1# / SqrDD
@@ -924,9 +1039,9 @@ Private Sub RVO()
                 '
 
                 'Compute Normalized DX DY of Agents I,J
-                AgentsDX = DX(pair)
-                AgentsDY = DY(pair)
-                JID = 1# / Sqr(D(pair))
+                AgentsDX = dx(pair)
+                AgentsDY = dy(pair)
+                JID = 1# / Sqr(d(pair))
                 AgentsDX = AgentsDX * JID
                 AgentsDY = AgentsDY * JID
 
@@ -940,9 +1055,9 @@ Private Sub RVO()
                 'It's useful to take some Velocity from other Agent
                 If DOT_I > 0# Then
                     '                    DOT_I = DOT_I * GoingToCollide * GlobAVOIDMUL * KOtherSpeed
-                    DOT_I = DOT_I ^ 0.5 * GoingToCollide * GlobAVOIDMUL * KOtherSpeed
-                    Agent(I).VXchange = Agent(I).VXchange + Agent(J).VX * DOT_I
-                    Agent(I).VYchange = Agent(I).VYchange + Agent(J).VY * DOT_I
+                    DOT_I = DOT_I ^ 0.5 * GoingToCollide * GlobAVOIDMUL * KOtherSpeed * kSpeedI
+                    Agent(I).VXchange = Agent(I).VXchange + Agent(J).nVX * DOT_I    '- Agent(I).VX * DOT_J
+                    Agent(I).VYchange = Agent(I).VYchange + Agent(J).nVY * DOT_I    '- Agent(I).VY * DOT_J
                 Else
                     DOT_I = 0
                 End If
@@ -957,32 +1072,34 @@ Private Sub RVO()
                 'It's useful to take some Velocity from other Agent
                 If DOT_J > 0# Then
                     '                    DOT_J = DOT_J * GoingToCollide * GlobAVOIDMUL * KOtherSpeed
-                    DOT_J = DOT_J ^ 0.5 * GoingToCollide * GlobAVOIDMUL * KOtherSpeed
-                    Agent(J).VXchange = Agent(J).VXchange + Agent(I).VX * DOT_J
-                    Agent(J).VYchange = Agent(J).VYchange + Agent(I).VY * DOT_J
+                    DOT_J = DOT_J ^ 0.5 * GoingToCollide * GlobAVOIDMUL * KOtherSpeed * kSpeedJ
+                    Agent(J).VXchange = Agent(J).VXchange + Agent(I).nVX * DOT_J    '- Agent(J).VX * DOT_J
+                    Agent(J).VYchange = Agent(J).VYchange + Agent(I).nVY * DOT_J    '- Agent(J).VY * DOT_J
                 Else
                     DOT_J = 0
                 End If
                 '---------------------------------------------------------------
 
 
+
+
                 If CameraMode Then
                     With PairInfo(pair)
                         .Enabled = True
-                        .A = I: .B = J
-                        .aVX = Agent(I).VX * VMUL
-                        .aVY = Agent(I).VY * VMUL
-                        .bVX = Agent(J).VX * VMUL
-                        .bVY = Agent(J).VY * VMUL
+                        .a = I: .b = J
+                        .aVX = Agent(I).vX * VMUL
+                        .aVY = Agent(I).vY * VMUL
+                        .bVX = Agent(J).vX * VMUL
+                        .bVY = Agent(J).vY * VMUL
                         .chkX = CheckPosX
                         .chkY = CheckPosY
-                        .chkX2 = Agent(J).X + (Agent(J).VX - Agent(I).VX) * VMUL
-                        .chkY2 = Agent(J).Y + (Agent(J).VY - Agent(I).VY) * VMUL
+                        .chkX2 = Agent(J).X + (Agent(J).vX - Agent(I).vX) * VMUL
+                        .chkY2 = Agent(J).Y + (Agent(J).vY - Agent(I).vY) * VMUL
                         .GTC = GoingToCollide
-                        .aVXch = -dXX * ChangeMul1 + Agent(J).VX * DOT_I
-                        .aVYch = -dYY * ChangeMul1 + Agent(J).VY * DOT_I
-                        .bVXch = dXX * ChangeMul2 + Agent(I).VX * DOT_J
-                        .bVYch = dYY * ChangeMul2 + Agent(I).VY * DOT_J
+                        .aVXch = -dXX * ChangeMul1 + Agent(J).nVX * DOT_I
+                        .aVYch = -dYY * ChangeMul1 + Agent(J).nVY * DOT_I
+                        .bVXch = dXX * ChangeMul2 + Agent(I).nVX * DOT_J
+                        .bVYch = dYY * ChangeMul2 + Agent(I).nVY * DOT_J
                         ''                        .aVXch = -dXX * ChangeMul1 + dVX * DOT_I
                         ''                        .aVYch = -dYY * ChangeMul1 + dVY * DOT_I
                         ''                        .bVXch = dXX * ChangeMul2 - dVX * DOT_J
@@ -991,6 +1108,13 @@ Private Sub RVO()
 
                 End If
 
+
+                ''ChangeMul1 = Max(0.1, 1 - ChangeMul1 * 0.0005)
+                ''ChangeMul2 = Max(0.1, 1 - ChangeMul2 * 0.0005)
+                ''Agent(I).VTTS = Agent(I).VTTS * ChangeMul1
+                ''Agent(J).VTTS = Agent(J).VTTS * ChangeMul2
+
+
             End If
 
 
@@ -998,15 +1122,15 @@ Private Sub RVO()
             'Separate
 
 
-            If D(pair) < AgentsMinDist2 Then
+            If d(pair) < AgentsMinDist2 Then
                 '          Stop
                 '            FOLLOW = I
 
-                dd = Sqr(D(pair))
-                dXX = DX(pair) / dd
-                dYY = DY(pair) / dd
-                dXX = dXX * (AgentsMinDist - dd) * 0.5
-                dYY = dYY * (AgentsMinDist - dd) * 0.5
+                DD = Sqr(d(pair))
+                dXX = dx(pair) / DD
+                dYY = dy(pair) / DD
+                dXX = dXX * (AgentsMinDist - DD) * 0.5
+                dYY = dYY * (AgentsMinDist - DD) * 0.5
                 Agent(I).X = Agent(I).X - dXX
                 Agent(I).Y = Agent(I).Y - dYY
                 Agent(J).X = Agent(J).X + dXX
@@ -1018,7 +1142,7 @@ Private Sub RVO()
         Next
     End With
 
-    If (CNT And 7&) = 0 Then fMain.Caption = "Click to change Mode.   Mode: " & MODE & "   Follow: " & FOLLOW & "   Right click to change Camera follow  " & "   Pairs: " & RVONpairs & "   Collisions: " & Ncollisions & "              " & Format((Frame / 25) / (86000), "HH:MM:SS")
+    If (CNT And 7&) = 0 Then fMain.Caption = "Click to change Mode.   Mode: " & MODE & "         Follow: " & FollowDesc & "     Right click to change Camera follow  " & "   Pairs: " & RVONpairs & "   Collisions: " & Ncollisions & "              " & Format((Frame / 25) / (86000), "HH:MM:SS")
 
 End Sub
 
@@ -1036,6 +1160,10 @@ Public Sub MAINLOOP()
             If Not (CameraMode) Then draw_CAMERA Else: Draw_PAIR
         End If
 
+
+        If (CNT And 31&) = 0& Then
+            If FollowMode = 9 Then FOLLOW = FOLLOWHiTarg: FollowDesc = "MostTargetReached " & FOLLOW
+        End If
 
 
         '        If (CNT And 3&) = 0 Then
@@ -1070,26 +1198,96 @@ Private Sub updateTRAILS()
 
 End Sub
 
-Public Sub FOLLOWworst()
-    Dim R         As Double
+Public Function FOLLOWworstRule() As Long
+    Dim r         As Double
     Dim I         As Long
-    R = 99
+    r = 99
     For I = 1 To NA
-        If Agent(I).Avoidance < R Then
-            R = Agent(I).Avoidance: FOLLOW = I
+        If Agent(I).Avoidance < r Then
+            r = Agent(I).Avoidance: FOLLOWworstRule = I
         End If
     Next
-End Sub
-Public Sub FOLLOWbest()
-    Dim R         As Double
+End Function
+Public Function FOLLOWSlower() As Long
+    Dim r         As Double
     Dim I         As Long
-    R = 0
+    r = 99
     For I = 1 To NA
-        If Agent(I).Avoidance > R Then
-            R = Agent(I).Avoidance: FOLLOW = I
+        If Agent(I).maxV < r Then
+            r = Agent(I).maxV: FOLLOWSlower = I
         End If
     Next
-End Sub
+End Function
+Public Function FOLLOWworstFaster() As Long
+    Dim r         As Double
+    Dim I         As Long
+    r = -999
+    For I = 1 To NA
+        If Agent(I).maxV - Agent(I).Avoidance > r Then
+            r = Agent(I).maxV - Agent(I).Avoidance: FOLLOWworstFaster = I
+        End If
+    Next
+End Function
+Public Function FOLLOWworstSlower() As Long
+    Dim r         As Double
+    Dim I         As Long
+    r = -999
+    For I = 1 To NA
+        If -Agent(I).maxV - Agent(I).Avoidance > r Then
+            r = -Agent(I).maxV - Agent(I).Avoidance: FOLLOWworstSlower = I
+        End If
+    Next
+End Function
+Public Function FOLLOWbestRule() As Long
+    Dim r         As Double
+    Dim I         As Long
+    r = 0
+    For I = 1 To NA
+        If Agent(I).Avoidance > r Then
+            r = Agent(I).Avoidance: FOLLOWbestRule = I
+        End If
+    Next
+End Function
+Public Function FOLLOWFaster() As Long
+    Dim r         As Double
+    Dim I         As Long
+    r = 0
+    For I = 1 To NA
+        If Agent(I).maxV > r Then
+            r = Agent(I).maxV: FOLLOWFaster = I
+        End If
+    Next
+End Function
+Public Function FOLLOWbestFaster() As Long
+    Dim r         As Double
+    Dim I         As Long
+    r = 0
+    For I = 1 To NA
+        If Agent(I).Avoidance + Agent(I).maxV > r Then
+            r = Agent(I).Avoidance + Agent(I).maxV: FOLLOWbestFaster = I
+        End If
+    Next
+End Function
+
+Public Function FOLLOWbestSlower() As Long
+    Dim r         As Double
+    Dim I         As Long
+    r = -99999
+    For I = 1 To NA
+        If Agent(I).Avoidance - Agent(I).maxV > r Then
+            r = Agent(I).Avoidance - Agent(I).maxV: FOLLOWbestSlower = I
+        End If
+    Next
+End Function
+Public Function FOLLOWHiTarg() As Long
+    Dim I         As Long
+    For I = 1 To NA
+        If Agent(I).NReachedTargets > MAXTR Then
+            MAXTR = Agent(I).NReachedTargets: FOLLOWHiTarg = I
+        End If
+    Next
+    If FOLLOWHiTarg = 0 Then FOLLOWHiTarg = FOLLOW
+End Function
 
 
 
@@ -1098,8 +1296,8 @@ Private Sub BUILDHuman(I As Long)
 
     Dim X#, Y#
     Dim nX#, nY#
-    Dim DX#, DY#: Dim A#, A2#
-    Dim W#: Dim H#
+    Dim dx#, dy#: Dim a#, A2#
+    Dim w#: Dim h#
 
 
     Dim Ank       As tVec3
@@ -1110,9 +1308,9 @@ Private Sub BUILDHuman(I As Long)
 
     X = Agent(I).X
     Y = Agent(I).Y
-    DX = Agent(I).ShoulderX
-    DY = Agent(I).ShoulderY
-    W = Agent(I).Walked
+    dx = Agent(I).ShoulderX
+    dy = Agent(I).ShoulderY
+    w = Agent(I).Walked
 
     nX = Agent(I).nVX
     nY = Agent(I).nVY
@@ -1156,10 +1354,10 @@ Private Sub BUILDHuman(I As Long)
 
 
 
-        A = W * 0.65              '0.5
+        a = w * 0.65              '0.5
         .P1 = vec3(0, -4.5, 1.25)
-        H = Sin(A) * 1.5: If H > 0 Then H = 0
-        .P2 = vec3(Cos(A) * 3, H, 1.25)
+        h = Sin(a) * 1.5: If h > 0 Then h = 0
+        .P2 = vec3(Cos(a) * 3, h, 1.25)
 
 
         '        tmp2.X = FEETs(I).Lfeet.X - X
@@ -1171,7 +1369,7 @@ Private Sub BUILDHuman(I As Long)
 
 
         IKSolve .P1, .P2, 2.5, 2, Knee, tmp1
-        If DX * nX + DY * nY <= 0# Then Knee = tmp1
+        If dx * nX + dy * nY <= 0# Then Knee = tmp1
         tmp1 = .P1
         tmp2 = .P2
         Knee.Z = .P1.Z
@@ -1183,10 +1381,10 @@ Private Sub BUILDHuman(I As Long)
         TransformLine .P1, .P2, nX, nY, X, Y: ADDlineToScreen L, I
 
 
-        A = A + PI
+        a = a + PI
         .P1 = vec3(0, -4.5, -1.25)
-        H = Sin(A) * 1.6: If H > 0 Then H = 0
-        .P2 = vec3(Cos(A) * 3, H, -1.25)
+        h = Sin(a) * 1.6: If h > 0 Then h = 0
+        .P2 = vec3(Cos(a) * 3, h, -1.25)
 
 
 
@@ -1202,6 +1400,7 @@ Private Sub BUILDHuman(I As Long)
         '------------------------------------------------------------------------
 
         'ARMS
+        .Size = 0.8
         '        .P1 = vec3(0, -8, 1.5)
         '        .P2 = vec3(Cos(A) + 0.5, -4 - Cos(A), 3)
         '        TransformLine .P1, .P2, DX, DY, X, Y: ADDlineToScreen L, I
@@ -1210,23 +1409,23 @@ Private Sub BUILDHuman(I As Long)
         '        .P2 = vec3(Cos(A + PI) + 0.5, -4 - Cos(A + PI), -3)
         '        TransformLine .P1, .P2, DX, DY, X, Y: ADDlineToScreen L, I
 
-        A2 = Cos(A) * 1.4
+        A2 = Cos(a) * 1.4
         .P1 = vec3(0, -7.5, 1.65)
         .P2 = vec3(A2 + 0.5, -3.6 - Abs(A2) * 0.77, 2.65)
-        TransformLine .P1, .P2, DX, DY, X, Y: ADDlineToScreen L, I
+        TransformLine .P1, .P2, dx, dy, X, Y: ADDlineToScreen L, I
 
         .P1 = vec3(0, -7.5, -1.65)
         .P2 = vec3(-A2 + 0.5, -3.6 - Abs(A2) * 0.77, -2.65)
-        TransformLine .P1, .P2, DX, DY, X, Y: ADDlineToScreen L, I
+        TransformLine .P1, .P2, dx, dy, X, Y: ADDlineToScreen L, I
 
 
         'HEAD
         '        .P1 = vec3(0.2, -9.5, 0)
         '        .P2 = vec3(0.4, -10, 0)
-        .P1 = vec3(0.45, -9.5, 0)
-        .P2 = vec3(0.8, -9.5, 0)
+        .P1 = vec3(0.45, -9.5 + 0.5, 0)
+        .P2 = vec3(0.8, -9.5 + 0.5, 0)
         ' TransformLine .P1, .P2, nX, nY, X, Y: L.Size = 1.75: ADDlineToScreen L, I
-        TransformLine .P1, .P2, DX, DY, X, Y: L.Size = 1.75: ADDlineToScreen L, I
+        TransformLine .P1, .P2, dx, dy, X, Y: L.Size = 1.75: ADDlineToScreen L, I
 
 
 
@@ -1237,8 +1436,8 @@ Private Sub BUILDHuman(I As Long)
         .P1.Z = Agent(I).TY
         .P1.Y = 0
         .P2 = L.P1
-        .P2.Y = -0.1
-        .Size = 1.5
+        .P2.Y = -0.2              '-0.1
+        .Size = 1.33              '1.5
         ADDlineToScreen L, I
     End With
 End Sub
@@ -1272,8 +1471,8 @@ End Sub
 Public Sub INIT_Targets()
     Dim I         As Long
     Dim FirstTarg As Boolean
-    Dim R         As Double
-    Dim A         As Double
+    Dim r         As Double
+    Dim a         As Double
 
     If NTargets = 0 Then
         ReDim AgentTarget(NA)
@@ -1285,10 +1484,9 @@ Public Sub INIT_Targets()
     ReDim ArrayOfTargets(NTargets)
 
 
-
     For I = 0 To NTargets
-        ArrayOfTargets(I).X = 200 + Rnd * (WorldW - 400)
-        ArrayOfTargets(I).Y = 200 + Rnd * (WorldH - 400)
+        ArrayOfTargets(I).X = 100 + Rnd * (WorldW - 200)
+        ArrayOfTargets(I).Y = 100 + Rnd * (WorldH - 200)
     Next
 
     If FirstTarg Then
@@ -1301,13 +1499,105 @@ Public Sub INIT_Targets()
 
         For I = 1 To NA
             '            R = 20 + 99 * I / NA
-            R = I / NA: R = Sqr(R)
-            R = 10 + 99 * R
-            A = 5000 * PI2 / R
-            Agent(I).TX = ArrayOfTargets(0).X + Cos(A) * R
-            Agent(I).TY = ArrayOfTargets(0).Y + Sin(A) * R
+            r = I / NA: r = Sqr(r)
+            '            R = 10 + 99 * R
+            r = 4 + r * 30
+
+            a = 5000 * PI2 / r
+            Agent(I).TX = ArrayOfTargets(0).X + Cos(a) * r
+            Agent(I).TY = ArrayOfTargets(0).Y + Sin(a) * r
         Next
     End If
 
+End Sub
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'Oriented Vesica - exact   (https://www.shadertoy.com/view/cs2yzG)
+'
+'float sdOrientedVesica( vec2 p, vec2 a, vec2 b, float w )
+'{
+'    float r = 0.5*length(b-a);
+'    float d = 0.5*(r*r-w*w)/w;
+'    vec2 v = (b-a)/r;
+'    vec2 c = (b+a)*0.5;
+'    vec2 q = 0.5*abs(mat2(v.y,v.x,-v.x,v.y)*(p-c));
+'    vec3 h = (r*q.x<d*(q.y-r)) ? vec3(0.0,r,0.0) : vec3(-d,0.0,d+w);
+'    return length( q-h.xy) - h.z;
+'}
+''Oriented Vesica - exact   (https://www.shadertoy.com/view/cs2yzG)
+
+Private Function sdOrientedVesica(p As tVec3, a As tVec3, b As tVec3, w As Double) As Double
+    Dim r#, d#
+    Dim vX#, vY#
+    Dim cX#, cY#
+    Dim qX#, qY#
+    Dim h         As tVec3
+    Dim dx        As Double
+    Dim dy        As Double
+
+    dx = b.X - a.X
+    dy = b.Y - a.Y
+
+    r = 0.5 * Sqr(dx * dx + dy * dy)
+    d = 0.5 * (r * r - w * w) / w
+    vX = dx / r
+    vY = dy / r
+    cX = (b.X + a.X) * 0.5
+    cY = (b.Y + a.Y) * 0.5
+
+    dx = p.X - cX
+    dy = p.X - cX
+
+    qX = 0.5 * Abs(dx * vY + dy * vX)
+    qY = 0.5 * Abs(dx * -vX + dy * vY)
+
+    '    vec2 q = 0.5*abs(mat2(v.y,v.x,-v.x,v.y)*(p-c));
+    '    vec3 h = (r*q.x<d*(q.y-r)) ? vec3(0.0,r,0.0) : vec3(-d,0.0,d+w);
+    '    return length( q-h.xy) - h.z;
+    If (r * qX < d * (qY - r)) Then
+        h = vec3(0#, r, 0#)
+    Else
+        h = vec3(-d, 0#, d + w)
+    End If
+
+    sdOrientedVesica = Sqr(dx * dx + dy * dy) - h.Z
+
+End Function
+
+
+Private Sub OUTINFO()
+    'https://www.vbforums.com/showthread.php?898105-RESOLVED-Fugly-Font-itis-Is-there-a-better-way-to-Cairo-this&p=5583735&viewfull=1#post5583735
+    CC.SetLineWidth 4             'Stroke width
+    CC.SelectFont "Segoe UI", 12, RGB(255, 255, 255)    'Font selection
+    CC.TextOut 20, 15, FollowDesc & "      Mode: " & MODE, , , True    'Path for stroke
+
+    '    CC.SetSourceColor vbBlack
+    '    CC.Stroke True    ' Keep the path open so we can perform a subsequent fill
+    CC.SetSourceColor vbWhite
+    CC.Fill                       ' Fill Close the path
 
 End Sub

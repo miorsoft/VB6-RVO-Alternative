@@ -20,7 +20,7 @@ Public Type tCapsule
     P2            As tVec3
     ScreenP1      As tVec3
     ScreenP2      As tVec3
-    R             As Double
+    r             As Double
     AgentIndex    As Long
     Size          As Double
     CamD          As Double
@@ -43,16 +43,16 @@ Public Function vec3(X As Double, Y As Double, Z As Double) As tVec3
     End With
 End Function
 
-Public Function Normalize3(V As tVec3) As tVec3
-    Dim D         As Double
+Public Function Normalize3(v As tVec3) As tVec3
+    Dim d         As Double
 
-    With V
-        D = (.X * .X + .Y * .Y + .Z * .Z)
-        If D Then
-            D = 1# / Sqr(D)
-            Normalize3.X = .X * D
-            Normalize3.Y = .Y * D
-            Normalize3.Z = .Z * D
+    With v
+        d = (.X * .X + .Y * .Y + .Z * .Z)
+        If d Then
+            d = 1# / Sqr(d)
+            Normalize3.X = .X * d
+            Normalize3.Y = .Y * d
+            Normalize3.Z = .Z * d
         Else
             '        MsgBox "??? NORMALIZE"
         End If
@@ -67,11 +67,11 @@ Public Function DIFF3(V1 As tVec3, V2 As tVec3) As tVec3
     End With
 End Function
 
-Public Function CROSS3(A As tVec3, B As tVec3) As tVec3
-    With A
-        CROSS3.X = .Y * B.Z - .Z * B.Y
-        CROSS3.Y = .Z * B.X - .X * B.Z
-        CROSS3.Z = .X * B.Y - .Y * B.X
+Public Function CROSS3(a As tVec3, b As tVec3) As tVec3
+    With a
+        CROSS3.X = .Y * b.Z - .Z * b.Y
+        CROSS3.Y = .Z * b.X - .X * b.Z
+        CROSS3.Z = .X * b.Y - .Y * b.X
     End With
 End Function
 Public Function DOT3(V1 As tVec3, V2 As tVec3) As Double
@@ -91,28 +91,28 @@ Public Function Atan2(ByVal X As Double, ByVal Y As Double) As Double
     ' While Atan2 < 0: Atan2 = Atan2 + PI2: Wend
     ' While Atan2 > PI2: Atan2 = Atan2 - PI2: Wend
 End Function
-Public Function Length3(V As tVec3) As Double
-    With V
+Public Function Length3(v As tVec3) As Double
+    With v
         Length3 = Sqr(.X * .X + .Y * .Y + .Z * .Z)
     End With
 End Function
 
-Public Function Length32(V As tVec3) As Double
-    With V
+Public Function Length32(v As tVec3) As Double
+    With v
         Length32 = .X * .X + .Y * .Y + .Z * .Z
     End With
 End Function
 
-Public Function MUL3(V As tVec3, A As Double) As tVec3
-    With V
-        MUL3.X = .X * A
-        MUL3.Y = .Y * A
-        MUL3.Z = .Z * A
+Public Function MUL3(v As tVec3, a As Double) As tVec3
+    With v
+        MUL3.X = .X * a
+        MUL3.Y = .Y * a
+        MUL3.Z = .Z * a
     End With
 End Function
 
-Public Function MUL3V(V As tVec3, V2 As tVec3) As tVec3
-    With V
+Public Function MUL3V(v As tVec3, V2 As tVec3) As tVec3
+    With v
         MUL3V.X = .X * V2.X
         MUL3V.Y = .Y * V2.Y
         MUL3V.Z = .Z * V2.Z
@@ -127,11 +127,11 @@ Public Function SUM3(V1 As tVec3, V2 As tVec3) As tVec3
     End With
 End Function
 
-Public Function SUM3v(V As tVec3, A As Double) As tVec3
-    With V
-        SUM3v.X = .X + A
-        SUM3v.Y = .Y + A
-        SUM3v.Z = .Z + A
+Public Function SUM3v(v As tVec3, a As Double) As tVec3
+    With v
+        SUM3v.X = .X + a
+        SUM3v.Y = .Y + a
+        SUM3v.Z = .Z + a
     End With
 End Function
 
@@ -163,13 +163,13 @@ End Function
 
 ' OTHER FUNCTION - NOT used by CAMERA
 
-Public Function Max(A As Double, B As Double) As Double
-    Max = A
-    If B > Max Then Max = B
+Public Function Max(a As Double, b As Double) As Double
+    Max = a
+    If b > Max Then Max = b
 End Function
-Public Function min(A As Double, B As Double) As Double
-    min = A
-    If B < min Then min = B
+Public Function min(a As Double, b As Double) As Double
+    min = a
+    If b < min Then min = b
 End Function
 
 ''https://iquilezles.org/articles/simpleik/
@@ -226,31 +226,31 @@ Public Function IKSolve(ByRef Origin As tVec3, _
                         ByRef Sol2 As tVec3) As Boolean
     ' NOTE: Target will change position if no solution found!
     Dim pX#, pY#
-    Dim H#, W#, S#
+    Dim h#, w#, S#
 
     pX = Origin.X - Target.X
     pY = Origin.Y - Target.Y
 
-    H = pX * pX + pY * pY
-    W = H + R2 * R2 - R1 * R1
-    S = 4# * R2 * R2 * H - W * W
+    h = pX * pX + pY * pY
+    w = h + R2 * R2 - R1 * R1
+    S = 4# * R2 * R2 * h - w * w
 
     If S > 0# Then
         S = Sqr(S)
-        H = 0.5 / H
-        Sol1.X = Target.X + (pX * W - pY * S) * H
-        Sol1.Y = Target.Y + (pY * W + pX * S) * H
-        Sol2.X = Target.X + (pX * W + pY * S) * H
-        Sol2.Y = Target.Y + (pY * W - pX * S) * H
+        h = 0.5 / h
+        Sol1.X = Target.X + (pX * w - pY * S) * h
+        Sol1.Y = Target.Y + (pY * w + pX * S) * h
+        Sol2.X = Target.X + (pX * w + pY * S) * h
+        Sol2.Y = Target.Y + (pY * w - pX * S) * h
         IKSolve = True
     Else
         'No solution (so Move target and get Solutions [by reexre])
-        H = 1# / Sqr(H)
-        pX = pX * H: pY = pY * H
+        h = 1# / Sqr(h)
+        pX = pX * h: pY = pY * h
         Sol1.X = Origin.X - pX * R1
         Sol1.Y = Origin.Y - pY * R1
         Sol2 = Sol1
-        If W > 0# Then            'Target too far
+        If w > 0# Then            'Target too far
             Target.X = Origin.X - pX * (R1 + R2)
             Target.Y = Origin.Y - pY * (R1 + R2)
         Else                      'Target too close to Origin
@@ -272,7 +272,7 @@ End Function
 Public Sub IntersectOfLines(LA1x#, LA1y#, LA2x#, LA2y#, _
                             LB1x#, LB1y#, LB2x#, LB2y#, rX#, rY#)
 
-    Dim D         As Double
+    Dim d         As Double
     Dim NA As Double: Dim NB As Double
     Dim Dx1 As Double: Dim Dx2 As Double
     Dim DY1 As Double: Dim Dy2 As Double
@@ -284,7 +284,7 @@ Public Sub IntersectOfLines(LA1x#, LA1y#, LA2x#, LA2y#, _
     Dy2 = LB2y - LB1y
 
     ' Denominator for ua and ub are the sP1me, so store this calculation
-    D = (Dy2) * (Dx1) - _
+    d = (Dy2) * (Dx1) - _
         (Dx2) * (DY1)
 
 
@@ -296,8 +296,8 @@ Public Sub IntersectOfLines(LA1x#, LA1y#, LA2x#, LA2y#, _
     rX = -9999
     rY = -9999
 
-    If D = 0 Then Exit Sub
-    D = 1# / D
+    If d = 0 Then Exit Sub
+    d = 1# / d
 
     'NA and NB are calculated as seperate values for readability
     NA = (Dx2) * (LA1y - LB1y) - _
@@ -306,7 +306,7 @@ Public Sub IntersectOfLines(LA1x#, LA1y#, LA2x#, LA2y#, _
 
 
     ' Calculate the intermediate fractional point that the lines potentially intersect.
-    uA = NA * D
+    uA = NA * d
 
     ' The fractional point will be between 0 and 1 inclusive if the lines
     ' intersect.  If the fractional calculation is larger than 1 or smaller
@@ -316,7 +316,7 @@ Public Sub IntersectOfLines(LA1x#, LA1y#, LA2x#, LA2y#, _
             ' Calculate the intermediate fractional point that the lines potentially intersect.
             NB = (Dx1) * (LA1y - LB1y) - _
                  (DY1) * (LA1x - LB1x)
-            uB = NB * D
+            uB = NB * d
             If uB >= 0# Then
                 If uB <= 1# Then
                     rX = LA1x + (uA * Dx1)
@@ -332,9 +332,9 @@ End Sub
 
 
 
-Private Function BnearestThanA(A As tCapsule, B As tCapsule) As Boolean
+Private Function BnearestThanA(a As tCapsule, b As tCapsule) As Boolean
 
-    Dim D         As Double
+    Dim d         As Double
     Dim NA As Double: Dim NB As Double
     Dim Dx1 As Double: Dim Dx2 As Double
     Dim DY1 As Double: Dim Dy2 As Double
@@ -343,30 +343,30 @@ Private Function BnearestThanA(A As tCapsule, B As tCapsule) As Boolean
 
     '    BnearestThanA = A.ScreenP1.Z + A.ScreenP2.Z < B.ScreenP1.Z + B.ScreenP2.Z
     '    BnearestThanA = min(A.ScreenP1.Z, A.ScreenP2.Z) < min(B.ScreenP1.Z, B.ScreenP2.Z)
-    BnearestThanA = A.CamD > B.CamD
+    BnearestThanA = a.CamD > b.CamD
 
 
     Exit Function
 
     Const E       As Double = 0.001
-    If Abs(A.ScreenP1.X - B.ScreenP1.X) < E And Abs(A.ScreenP1.Y - B.ScreenP1.Y) < E Then
-        BnearestThanA = A.ScreenP2.Z > B.ScreenP2.Z: Exit Function
-    ElseIf Abs(A.ScreenP1.X - B.ScreenP2.X) < E And Abs(A.ScreenP1.Y - B.ScreenP2.Y) < E Then
-        BnearestThanA = A.ScreenP2.Z > B.ScreenP1.Z: Exit Function
-    ElseIf Abs(A.ScreenP2.X - B.ScreenP1.X) < E And Abs(A.ScreenP2.Y - B.ScreenP1.Y) < E Then
-        BnearestThanA = A.ScreenP1.Z > B.ScreenP2.Z: Exit Function
-    ElseIf Abs(A.ScreenP2.X - B.ScreenP2.X) < E And Abs(A.ScreenP2.Y - B.ScreenP2.Y) < E Then
-        BnearestThanA = A.ScreenP1.Z > B.ScreenP1.Z: Exit Function
+    If Abs(a.ScreenP1.X - b.ScreenP1.X) < E And Abs(a.ScreenP1.Y - b.ScreenP1.Y) < E Then
+        BnearestThanA = a.ScreenP2.Z > b.ScreenP2.Z: Exit Function
+    ElseIf Abs(a.ScreenP1.X - b.ScreenP2.X) < E And Abs(a.ScreenP1.Y - b.ScreenP2.Y) < E Then
+        BnearestThanA = a.ScreenP2.Z > b.ScreenP1.Z: Exit Function
+    ElseIf Abs(a.ScreenP2.X - b.ScreenP1.X) < E And Abs(a.ScreenP2.Y - b.ScreenP1.Y) < E Then
+        BnearestThanA = a.ScreenP1.Z > b.ScreenP2.Z: Exit Function
+    ElseIf Abs(a.ScreenP2.X - b.ScreenP2.X) < E And Abs(a.ScreenP2.Y - b.ScreenP2.Y) < E Then
+        BnearestThanA = a.ScreenP1.Z > b.ScreenP1.Z: Exit Function
 
     Else
 
-        Dx1 = A.ScreenP2.X - A.ScreenP1.X
-        DY1 = A.ScreenP2.Y - A.ScreenP1.Y
-        Dx2 = B.ScreenP2.X - B.ScreenP1.X
-        Dy2 = B.ScreenP2.Y - B.ScreenP1.Y
+        Dx1 = a.ScreenP2.X - a.ScreenP1.X
+        DY1 = a.ScreenP2.Y - a.ScreenP1.Y
+        Dx2 = b.ScreenP2.X - b.ScreenP1.X
+        Dy2 = b.ScreenP2.Y - b.ScreenP1.Y
 
         ' Denominator for ua and ub are the sP1me, so store this calculation
-        D = (Dy2) * (Dx1) - _
+        d = (Dy2) * (Dx1) - _
             (Dx2) * (DY1)
 
 
@@ -378,16 +378,16 @@ Private Function BnearestThanA(A As tCapsule, B As tCapsule) As Boolean
         '        IntersectOfLinesV3.X = -9999
         '        IntersectOfLinesV3.Y = -9999
 
-        If D = 0 Then Exit Function
-        D = 1# / D
+        If d = 0 Then Exit Function
+        d = 1# / d
 
         'NA and NB are calculated as seperate values for readability
-        NA = (Dx2) * (A.ScreenP1.Y - B.ScreenP1.Y) - _
-             (Dy2) * (A.ScreenP1.X - B.ScreenP1.X)
+        NA = (Dx2) * (a.ScreenP1.Y - b.ScreenP1.Y) - _
+             (Dy2) * (a.ScreenP1.X - b.ScreenP1.X)
 
 
         ' Calculate the intermediate fractional point that the lines potentially intersect.
-        uA = NA * D
+        uA = NA * d
 
         ' The fractional point will be between 0 and 1 inclusive if the lines
         ' intersect.  If the fractional calculation is larger than 1 or smaller
@@ -395,18 +395,18 @@ Private Function BnearestThanA(A As tCapsule, B As tCapsule) As Boolean
         If uA >= 0# Then
             If uA <= 1# Then
                 ' Calculate the intermediate fractional point that the lines potentially intersect.
-                NB = (Dx1) * (A.ScreenP1.Y - B.ScreenP1.Y) - _
-                     (DY1) * (A.ScreenP1.X - B.ScreenP1.X)
+                NB = (Dx1) * (a.ScreenP1.Y - b.ScreenP1.Y) - _
+                     (DY1) * (a.ScreenP1.X - b.ScreenP1.X)
 
-                uB = NB * D
+                uB = NB * d
                 If uB >= 0# Then
                     If uB <= 1# Then
                         Stop
                         '                        IntersectOfLinesV3.X = A.ScreenP1.X + (uA * Dx1)
                         '                        IntersectOfLinesV3.Y = A.ScreenP1.Y + (uA * DY1)
                         ' Z ?
-                        BnearestThanA = A.ScreenP1.Z + (uA * (A.ScreenP2.Z - A.ScreenP1.Z)) > _
-                                        B.ScreenP1.Z + (uB * (B.ScreenP2.Z - B.ScreenP1.Z))    'Z of line B
+                        BnearestThanA = a.ScreenP1.Z + (uA * (a.ScreenP2.Z - a.ScreenP1.Z)) > _
+                                        b.ScreenP1.Z + (uB * (b.ScreenP2.Z - b.ScreenP1.Z))    'Z of line B
                         Exit Function
                     End If
                 End If
@@ -419,7 +419,7 @@ Private Function BnearestThanA(A As tCapsule, B As tCapsule) As Boolean
 
 End Function
 
-Public Sub ADDlineToScreen(L As tCapsule, I As Long)
+Public Sub ADDlineToScreen(L As tCapsule, Idx As Long)
     Dim Vis       As Boolean
     CAM.FarPlane = 5000
     With L
@@ -432,7 +432,7 @@ Public Sub ADDlineToScreen(L As tCapsule, I As Long)
                 MaxNCapsulesInScreen = NCapsulesInScreen * 2
                 ReDim Preserve CAPSULES(MaxNCapsulesInScreen)
             End If
-            .AgentIndex = I
+            .AgentIndex = Idx
             CAPSULES(NCapsulesInScreen) = L
             '            CAPSULES(NCapsulesInScreen).CamD = 1# / (0.5 * (.ScreenP1.Z + .ScreenP2.Z))
             CAPSULES(NCapsulesInScreen).CamD = 1# / (Max(.ScreenP1.Z, .ScreenP2.Z)) - .Size * 0.5
@@ -440,12 +440,16 @@ Public Sub ADDlineToScreen(L As tCapsule, I As Long)
         End If
 
 
+        '    '''---------- SHADOWS
         If RunningNotInIDE Then   'Compiled (not IDE)
-            '    '''---------- SHADOWS
+
             CAM.FarPlane = 400
             Vis = False
-            CAM.LineToScreen vec3(.P1.X + .P1.Y * 1.3, 0, .P1.Z + .P1.Y * 1.2), _
-                             vec3(.P2.X + .P2.Y * 1.3, 0, .P2.Z + .P2.Y * 1.2), .ScreenP1, .ScreenP2, Vis
+            '            CAM.LineToScreen vec3(.P1.X + .P1.Y * 1.3, 0, .P1.Z + .P1.Y * 1.2), _
+                         vec3(.P2.X + .P2.Y * 1.3, 0, .P2.Z + .P2.Y * 1.2), .ScreenP1, .ScreenP2, Vis
+
+            CAM.LineToScreen vec3(.P1.X + .P1.Y * 0.8, 0, .P1.Z + .P1.Y * 0.7), _
+                             vec3(.P2.X + .P2.Y * 0.8, 0, .P2.Z + .P2.Y * 0.7), .ScreenP1, .ScreenP2, Vis
 
             If Vis Then
                 If L.Size = 0 Then .Size = 1
@@ -455,7 +459,7 @@ Public Sub ADDlineToScreen(L As tCapsule, I As Long)
                     ReDim Preserve CAPSULES(MaxNCapsulesInScreen)
                 End If
                 .AgentIndex = -1
-                .ScreenP1.Z = .ScreenP1.Z * 0.5
+                .ScreenP1.Z = .ScreenP1.Z * 0.5    'Put Far away
                 .ScreenP2.Z = .ScreenP2.Z * 0.5
 
                 CAPSULES(NCapsulesInScreen) = L
@@ -507,7 +511,6 @@ Public Sub QuickSortCapsules(List() As tCapsule, ByVal min As Long, ByVal Max As
         Do While (List(Low).CamD > TestDist): Low = Low + 1&: Loop
         Do While (List(high).CamD < TestDist): high = high - 1&: Loop
 
-
         If (Low <= high) Then
             temp = List(Low): List(Low) = List(high): List(high) = temp
             Low = Low + 1&: high = high - 1&
@@ -522,7 +525,7 @@ End Sub
 
 
 
-Public Function VectorReflect(VX#, VY#, WallX#, WallY#, rX#, rY#)
+Public Function VectorReflect(vX#, vY#, WallX#, WallY#, rX#, rY#)
     'Function returning the reflection of one vector around another.
     'it's used to calculate the rebound of a Vector on another Vector
     'Vector "V" represents current velocity of a point.
@@ -530,25 +533,25 @@ Public Function VectorReflect(VX#, VY#, WallX#, WallY#, rX#, rY#)
     'Returns the vector velocity that the point takes after the rebound
 
     Dim vDot      As Double
-    Dim D         As Double
+    Dim d         As Double
     Dim NwX       As Double
     Dim NwY       As Double
 
     '    D = (WallX * WallX + WallY * WallY)
     '    If D = 0 Then Exit Function
     '    D = 1 / Sqr(D)
-    D = 1
+    d = 1
 
-    NwX = WallX * D
-    NwY = WallY * D
+    NwX = WallX * d
+    NwY = WallY * d
     '    'Vect2 = Vect1 - 2 * WallN * (WallN DOT Vect1)
     'vDot = N.DotV(V)
-    vDot = VX * NwX + VY * NwY
+    vDot = vX * NwX + vY * NwY
 
     NwX = NwX * vDot * 2
     NwY = NwY * vDot * 2
 
-    rX = -VX + NwX
-    rY = -VY + NwY
+    rX = -vX + NwX
+    rY = -vY + NwY
 
 End Function

@@ -58,8 +58,10 @@ Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
     If KeyCode = 67 Then CameraMode = Not (CameraMode)
 
     'Left-Right arrows
-    If KeyCode = 37 Then FOLLOW = FOLLOW - 1: If FOLLOW < 1 Then FOLLOW = NA
+    If KeyCode = 37 Then FOLLOW = FOLLOW - 1: If FOLLOW < 1 Then FOLLOW = NA:
     If KeyCode = 39 Then FOLLOW = FOLLOW + 1: If FOLLOW > NA Then FOLLOW = 1
+
+    If KeyCode = 37 Or KeyCode = 39 Then FollowDesc = FOLLOW
 
 End Sub
 
@@ -97,7 +99,7 @@ Private Sub Form_Load()
     WorldW = 1200
     WorldH = 1200
 
-    Init_RVO 400 * 1.3
+    Init_RVO 400 * 1.3 + 8
 
     '''    ScreenW = Me.ScaleWidth
     '''    ScreenH = Me.ScaleHeight
@@ -119,54 +121,83 @@ Private Sub Form_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As 
 
     If Not (doLOOP) Then Call MAINLOOP
     If Button = 1 Then
-        MODE = (MODE + 1) Mod 7
+
+
+
+        If MODE <> 7 Then MODE = (MODE + 1) Mod 8
         If MODE = 6 Then
-            WorldW = 2000
-            WorldH = 2000
+            WorldW = 1500         ' 2000
+            WorldH = 1500         '2000
             GRID.INIT WorldW * 1, WorldH * 1, GridSize
 
             INIT_Targets
 
-        Else
+            '        Else
             '            WorldW = 1000         'Me.ScaleWidth
             '            WorldH = 730          ' Me.ScaleHeight
             '            GRID.INIT WorldW * 1, WorldH * 1, GridSize
+        End If
+        If MODE = 7 Then
+            INIT_TFormation
+            If CurrFormation > NFM + 1 Then
+
+
+                CurrFormation = 0
+                MODE = (MODE + 1) Mod 8:
+            End If
+
         End If
 
     End If
 
     If Button = 2 Then
-        If FOLLOW = 0 Then FOLLOWworst: Exit Sub
-        If FOLLOW > 1 Then FOLLOW = 1: Exit Sub
-        If FOLLOW = 1 Then FOLLOW = 0
+        '        If FOLLOW = 0 Then FOLLOWworst: Exit Sub
+        '        If FOLLOW > 1 Then FOLLOW = 1: Exit Sub
+        '        If FOLLOW = 1 Then FOLLOW = 0
+        FollowMode = (FollowMode + 1) Mod NFollowModes
+        Select Case FollowMode
+        Case 0: FOLLOW = 0: FollowDesc = "0"
+        Case 1: FOLLOW = FOLLOWSlower: FollowDesc = "Slower " & FOLLOW
+        Case 2: FOLLOW = FOLLOWFaster: FollowDesc = "Faster " & FOLLOW
+        Case 3: FOLLOW = FOLLOWworstRule: FollowDesc = "Min Avoidance " & FOLLOW
+        Case 4: FOLLOW = FOLLOWbestRule: FollowDesc = "Max Avoidance " & FOLLOW
+
+        Case 5: FOLLOW = FOLLOWworstFaster: FollowDesc = "Min Avoidance-Faster " & FOLLOW
+        Case 6: FOLLOW = FOLLOWworstSlower: FollowDesc = "Min Avoidance-Slower " & FOLLOW
+        Case 7: FOLLOW = FOLLOWbestFaster: FollowDesc = "Max Avoidance-Faster " & FOLLOW
+        Case 8: FOLLOW = FOLLOWbestSlower: FollowDesc = "Max Avoidance-Slower " & FOLLOW
+        Case 9: FOLLOW = FOLLOWHiTarg: FollowDesc = "MostTargetReached " & FOLLOW
+
+        End Select
+
     End If
 End Sub
 
 
 
 Private Sub Form_Resize()
-    Dim DX#, DY#
+    Dim dx#, dy#
 
     If ScaleMode = vbTwips Then
-        DX = 1 / Screen.TwipsPerPixelX
-        DY = 1 / Screen.TwipsPerPixelY
+        dx = 1 / Screen.TwipsPerPixelX
+        dy = 1 / Screen.TwipsPerPixelY
     Else
-        DX = 1
-        DY = 1
+        dx = 1
+        dy = 1
     End If
 
-    ScreenW = Round(Me.ScaleWidth * DX)
-    ScreenH = Round(Me.ScaleHeight * DY)
+    ScreenW = Round(Me.ScaleWidth * dx)
+    ScreenH = Round(Me.ScaleHeight * dy)
     Set CAM = New c3DEasyCam
     CAM.INIT vec3(200, 200, 200), vec3(0, 0, 0), vec3(ScreenW * 0.5, ScreenH * 0.5, 0), vec3(0, -1, 0)
     CAM.NearPlane = 10
     CAM.FarPlane = 3000
 
-
     Set SRF = Cairo.CreateSurface(ScreenW, ScreenH, ImageSurface)
     Set CC = SRF.CreateContext
     CC.AntiAlias = CAIRO_ANTIALIAS_FAST
     CC.SetLineCap CAIRO_LINE_CAP_ROUND
+
 
 End Sub
 
@@ -175,3 +206,4 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
     doLOOP = False
 
 End Sub
+

@@ -67,29 +67,39 @@ Public Property Get getPointY(I&) As Double
     getPointY = pY(I)
 End Property
 
+Public Property Get getWorldWidth() As Long
+    getWorldWidth = mW
+End Property
+
+Public Property Get getWorldHeight() As Long
+    getWorldHeight = mH
+End Property
+Public Property Get getMaxDist() As Long
+    getMaxDist = GridSize
+End Property
 
 Private Sub pvArrCopySingle(dest() As Double, Src() As Double)
     Dim Size      As Long
-    Dim W         As Long
-    Dim H         As Long
+    Dim w         As Long
+    Dim h         As Long
     '    W = UBound(Src, 1)
     '    H = UBound(Src, 2)
     '    Size = (W + 1) * (H + 1) * LenB(Src(0, 0))
     If pvArrayExists(ArrPtr(Src)) Then
 
-        W = UBound(Src)
-        Size = (W + 1) * LenB(Src(0))
+        w = UBound(Src)
+        Size = (w + 1) * LenB(Src(0))
 
         If pvArrayExists(ArrPtr(dest)) Then
             '        If (W - UBound(dest, 1)) Or (H - UBound(dest, 2)) Then
-            If (W - UBound(dest, 1)) Then
+            If (w - UBound(dest, 1)) Then
                 'ReDim dest(W, H)
-                ReDim dest(W)
+                ReDim dest(w)
             End If
         Else
             '''Array DEST has No Dimension
             'ReDim dest(W, H)
-            ReDim dest(W)
+            ReDim dest(w)
         End If
 
         '        '    CopyMemory ByVal VarPtr(dest(0, 0)), ByVal VarPtr(Src(0, 0)), Size
@@ -104,27 +114,27 @@ End Sub
 
 Private Sub pvArrCopyLong(dest() As Long, Src() As Long)
     Dim Size      As Long
-    Dim W         As Long
-    Dim H         As Long
+    Dim w         As Long
+    Dim h         As Long
     '    W = UBound(Src, 1)
     '    H = UBound(Src, 2)
     '    Size = (W + 1) * (H + 1) * LenB(Src(0, 0))
 
     If pvArrayExists(ArrPtr(Src)) Then
 
-        W = UBound(Src)
-        Size = (W + 1) * LenB(Src(0))
+        w = UBound(Src)
+        Size = (w + 1) * LenB(Src(0))
 
         If pvArrayExists(ArrPtr(dest)) Then
             '        If (W - UBound(dest, 1)) Or (H - UBound(dest, 2)) Then
-            If (W - UBound(dest, 1)) Then
+            If (w - UBound(dest, 1)) Then
                 'ReDim dest(W, H)
-                ReDim dest(W)
+                ReDim dest(w)
             End If
         Else
             '''Array DEST has No Dimension
             'ReDim dest(W, H)
-            ReDim dest(W)
+            ReDim dest(w)
         End If
 
         '    CopyMemory ByVal VarPtr(dest(0, 0)), ByVal VarPtr(Src(0, 0)), Size
@@ -261,8 +271,8 @@ Friend Sub GetPairs(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As Doub
 
     Dim X         As Long
     Dim Y         As Long
-    Dim DX        As Double
-    Dim DY        As Double
+    Dim dx        As Double
+    Dim dy        As Double
     Dim I         As Long
     Dim J         As Long
 
@@ -308,42 +318,42 @@ Friend Sub GetPairs(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As Doub
                     PYI = pY(ii)
                     For J = I + 1& To .NP    'SELF
                         IJ = .pIDX(J)
-                        DX = pX(IJ) - PXI
-                        DY = pY(IJ) - PYI
-                        If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                        dx = pX(IJ) - PXI
+                        dy = pY(IJ) - PYI
+                        If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                     Next
 
 
                     'RIGHT
                     For J = 1& To CELL(Xp1, Y).NP
                         IJ = CELL(Xp1, Y).pIDX(J)
-                        DX = pX(IJ) - PXI
-                        DY = pY(IJ) - PYI
-                        If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                        dx = pX(IJ) - PXI
+                        dy = pY(IJ) - PYI
+                        If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                     Next
 
                     'down
                     For J = 1& To CELL(X, Yp1).NP
                         IJ = CELL(X, Yp1).pIDX(J)
-                        DX = pX(IJ) - PXI
-                        DY = pY(IJ) - PYI
-                        If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                        dx = pX(IJ) - PXI
+                        dy = pY(IJ) - PYI
+                        If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                     Next
 
                     'DownRight Diag
                     For J = 1& To CELL(Xp1, Yp1).NP
                         IJ = CELL(Xp1, Yp1).pIDX(J)
-                        DX = pX(IJ) - PXI
-                        DY = pY(IJ) - PYI
-                        If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                        dx = pX(IJ) - PXI
+                        dy = pY(IJ) - PYI
+                        If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                     Next
 
                     'upRight Diag
                     For J = 1& To CELL(Xp1, Ym1).NP
                         IJ = CELL(Xp1, Ym1).pIDX(J)
-                        DX = pX(IJ) - PXI
-                        DY = pY(IJ) - PYI
-                        If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                        dx = pX(IJ) - PXI
+                        dy = pY(IJ) - PYI
+                        If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                     Next
                 Next
             End With
@@ -369,23 +379,23 @@ Friend Sub GetPairs(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As Doub
                 PYI = pY(ii)
                 For J = I + 1& To .NP
                     IJ = .pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                 Next
                 'RIGHT ( )
                 For J = 1& To CELL(Xp1, Y).NP
                     IJ = CELL(Xp1, Y).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                 Next
                 'upRight Diag
                 For J = 1& To CELL(Xp1, Ym1).NP
                     IJ = CELL(Xp1, Ym1).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                 Next
             Next
 
@@ -404,30 +414,30 @@ Friend Sub GetPairs(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As Doub
                 PYI = pY(ii)
                 For J = I + 1& To .NP
                     IJ = .pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                 Next
                 'RIGHT ( )
                 For J = 1& To CELL(Xp1, 0&).NP
                     IJ = CELL(Xp1, 0&).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                 Next
                 'DownRight Diag
                 For J = 1& To CELL(Xp1, 1&).NP
                     IJ = CELL(Xp1, 1&).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                 Next
                 'Down
                 For J = 1& To CELL(X, 1&).NP
                     IJ = CELL(X, 1&).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                 Next
             Next
 
@@ -450,16 +460,16 @@ Friend Sub GetPairs(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As Doub
                 PYI = pY(ii)
                 For J = I + 1& To .NP
                     IJ = .pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                 Next
                 ' DOWN  )
                 For J = 1& To CELL(X, Yp1).NP
                     IJ = CELL(X, Yp1).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
                 Next
             Next
         End With
@@ -475,9 +485,9 @@ Friend Sub GetPairs(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As Doub
             PYI = pY(ii)
             For J = I + 1& To .NP
                 IJ = .pIDX(J)
-                DX = pX(IJ) - PXI
-                DY = pY(IJ) - PYI
-                If DX * DX + DY * DY < MaxDistance2 Then pvAddPair ii, IJ, DX, DY
+                dx = pX(IJ) - PXI
+                dy = pY(IJ) - PYI
+                If dx * dx + dy * dy < MaxDistance2 Then pvAddPair ii, IJ, dx, dy
             Next
         Next
     End With
@@ -518,11 +528,11 @@ Friend Sub GetPairsWDist(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As
 
     Dim X         As Long
     Dim Y         As Long
-    Dim DX        As Double
-    Dim DY        As Double
+    Dim dx        As Double
+    Dim dy        As Double
     Dim I         As Long
     Dim J         As Long
-    Dim D         As Double
+    Dim d         As Double
 
     Dim cWm1      As Long
     Dim cHm1      As Long
@@ -562,49 +572,49 @@ Friend Sub GetPairsWDist(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As
                     PYI = pY(ii)
                     For J = I + 1& To .NP    'SELF
                         IJ = .pIDX(J)
-                        DX = pX(IJ) - PXI
-                        DY = pY(IJ) - PYI
-                        D = DX * DX + DY * DY
-                        If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                        dx = pX(IJ) - PXI
+                        dy = pY(IJ) - PYI
+                        d = dx * dx + dy * dy
+                        If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
                     Next
 
                     'RIGHT
                     For J = 1& To CELL(Xp1, Y).NP
                         IJ = CELL(Xp1, Y).pIDX(J)
-                        DX = pX(IJ) - PXI
-                        DY = pY(IJ) - PYI
-                        D = DX * DX + DY * DY
-                        If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                        dx = pX(IJ) - PXI
+                        dy = pY(IJ) - PYI
+                        d = dx * dx + dy * dy
+                        If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
 
                     Next
 
                     'down
                     For J = 1& To CELL(X, Yp1).NP
                         IJ = CELL(X, Yp1).pIDX(J)
-                        DX = pX(IJ) - PXI
-                        DY = pY(IJ) - PYI
-                        D = DX * DX + DY * DY
-                        If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                        dx = pX(IJ) - PXI
+                        dy = pY(IJ) - PYI
+                        d = dx * dx + dy * dy
+                        If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
 
                     Next
 
                     'DownRight Diag
                     For J = 1& To CELL(Xp1, Yp1).NP
                         IJ = CELL(Xp1, Yp1).pIDX(J)
-                        DX = pX(IJ) - PXI
-                        DY = pY(IJ) - PYI
-                        D = DX * DX + DY * DY
-                        If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                        dx = pX(IJ) - PXI
+                        dy = pY(IJ) - PYI
+                        d = dx * dx + dy * dy
+                        If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
 
                     Next
 
                     'upRight Diag
                     For J = 1& To CELL(Xp1, Ym1).NP
                         IJ = CELL(Xp1, Ym1).pIDX(J)
-                        DX = pX(IJ) - PXI
-                        DY = pY(IJ) - PYI
-                        D = DX * DX + DY * DY
-                        If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                        dx = pX(IJ) - PXI
+                        dy = pY(IJ) - PYI
+                        d = dx * dx + dy * dy
+                        If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
                     Next
                 Next
             End With
@@ -628,27 +638,27 @@ Friend Sub GetPairsWDist(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As
                 PYI = pY(ii)
                 For J = I + 1& To .NP
                     IJ = .pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    D = DX * DX + DY * DY
-                    If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    d = dx * dx + dy * dy
+                    If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
 
                 Next
                 'RIGHT ( )
                 For J = 1& To CELL(Xp1, Y).NP
                     IJ = CELL(Xp1, Y).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    D = DX * DX + DY * DY
-                    If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    d = dx * dx + dy * dy
+                    If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
                 Next
                 'upRight Diag
                 For J = 1& To CELL(Xp1, Ym1).NP
                     IJ = CELL(Xp1, Ym1).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    D = DX * DX + DY * DY
-                    If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    d = dx * dx + dy * dy
+                    If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
                 Next
             Next
 
@@ -666,34 +676,34 @@ Friend Sub GetPairsWDist(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As
                 PYI = pY(ii)
                 For J = I + 1& To .NP
                     IJ = .pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    D = DX * DX + DY * DY
-                    If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    d = dx * dx + dy * dy
+                    If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
                 Next
                 'RIGHT ( )
                 For J = 1& To CELL(Xp1, 0&).NP
                     IJ = CELL(Xp1, 0&).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    D = DX * DX + DY * DY
-                    If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    d = dx * dx + dy * dy
+                    If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
                 Next
                 'DownRight Diag
                 For J = 1& To CELL(Xp1, 1&).NP
                     IJ = CELL(Xp1, 1&).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    D = DX * DX + DY * DY
-                    If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    d = dx * dx + dy * dy
+                    If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
                 Next
                 'Down
                 For J = 1& To CELL(X, 1&).NP
                     IJ = CELL(X, 1&).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    D = DX * DX + DY * DY
-                    If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    d = dx * dx + dy * dy
+                    If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
                 Next
             Next
 
@@ -716,19 +726,19 @@ Friend Sub GetPairsWDist(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As
                 PYI = pY(ii)
                 For J = I + 1& To .NP
                     IJ = .pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    D = DX * DX + DY * DY
-                    If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    d = dx * dx + dy * dy
+                    If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
 
                 Next
                 ' DOWN  )
                 For J = 1& To CELL(X, Yp1).NP
                     IJ = CELL(X, Yp1).pIDX(J)
-                    DX = pX(IJ) - PXI
-                    DY = pY(IJ) - PYI
-                    D = DX * DX + DY * DY
-                    If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                    dx = pX(IJ) - PXI
+                    dy = pY(IJ) - PYI
+                    d = dx * dx + dy * dy
+                    If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
 
                 Next
             Next
@@ -745,10 +755,10 @@ Friend Sub GetPairsWDist(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As
             PYI = pY(ii)
             For J = I + 1& To .NP
                 IJ = .pIDX(J)
-                DX = pX(IJ) - PXI
-                DY = pY(IJ) - PYI
-                D = DX * DX + DY * DY
-                If D < MaxDistance2 Then pvAddPairWDist ii, IJ, DX, DY, D
+                dx = pX(IJ) - PXI
+                dy = pY(IJ) - PYI
+                d = dx * dx + dy * dy
+                If d < MaxDistance2 Then pvAddPairWDist ii, IJ, dx, dy, d
             Next
         Next
     End With
@@ -774,7 +784,7 @@ Friend Sub GetPairsWDist(RP1() As Long, RP2() As Long, Rdx() As Double, Rdy() As
 
 End Sub
 
-Private Sub pvAddPair(P1 As Long, P2 As Long, DX As Double, DY As Double)
+Private Sub pvAddPair(P1 As Long, P2 As Long, dx As Double, dy As Double)
     Npairs = Npairs + 1
     If Npairs > MAXNpair Then
         MAXNpair = Npairs + 128   '* 2
@@ -786,12 +796,12 @@ Private Sub pvAddPair(P1 As Long, P2 As Long, DX As Double, DY As Double)
 
     PairP1(Npairs) = P1
     PairP2(Npairs) = P2
-    PairDX(Npairs) = DX
-    PairDY(Npairs) = DY
+    PairDX(Npairs) = dx
+    PairDY(Npairs) = dy
 
 End Sub
 
-Private Sub pvAddPairWDist(P1 As Long, P2 As Long, DX As Double, DY As Double, D As Double)
+Private Sub pvAddPairWDist(P1 As Long, P2 As Long, dx As Double, dy As Double, d As Double)
 
     Npairs = Npairs + 1
 
@@ -814,15 +824,15 @@ Private Sub pvAddPairWDist(P1 As Long, P2 As Long, DX As Double, DY As Double, D
 
     PairP1(Npairs) = P1
     PairP2(Npairs) = P2
-    PairDX(Npairs) = DX
-    PairDY(Npairs) = DY
-    PairD(Npairs) = D
+    PairDX(Npairs) = dx
+    PairDY(Npairs) = dy
+    PairD(Npairs) = d
 
 End Sub
 
 
 
-Friend Sub QueryPointsInCircle(cX As Double, cY As Double, R As Double, rdist() As Double, rIdx() As Long, UBcount As Long)
+Friend Sub QueryPointsInCircle(cX As Double, cY As Double, r As Double, rdist() As Double, rIdx() As Long, UBcount As Long)
 
     Dim X         As Long
     Dim Y         As Long
@@ -832,9 +842,9 @@ Friend Sub QueryPointsInCircle(cX As Double, cY As Double, R As Double, rdist() 
     Dim J         As Long
     Dim IJ        As Long
 
-    Dim DX        As Double
-    Dim DY        As Double
-    Dim D         As Double
+    Dim dx        As Double
+    Dim dy        As Double
+    Dim d         As Double
     Dim GG        As Long
     Dim R2        As Double
 
@@ -851,12 +861,12 @@ Friend Sub QueryPointsInCircle(cX As Double, cY As Double, R As Double, rdist() 
     ReDim rIdx(0)
     Npairs = 0
 
-    GG = R \ GridSize
+    GG = r \ GridSize
     If GG < 1 Then GG = 1         'Commented 2023
     'If GG < 1 Then Stop
     'If GG > 2 Then Debug.Print GG & "  " & R
 
-    R2 = R * R
+    R2 = r * r
 
     XF = X - GG: If XF < 0& Then XF = 0&
     XT = X + GG: If XT > CellW Then XT = CellW
@@ -869,11 +879,11 @@ Friend Sub QueryPointsInCircle(cX As Double, cY As Double, R As Double, rdist() 
             With CELL(XX, YY)
                 For J = 1 To .NP
                     IJ = .pIDX(J)
-                    DX = pX(IJ) - cX
-                    DY = pY(IJ) - cY
-                    D = DX * DX + DY * DY
-                    If D <= R2 Then
-                        pvAddPointWDist IJ, D
+                    dx = pX(IJ) - cX
+                    dy = pY(IJ) - cY
+                    d = dx * dx + dy * dy
+                    If d <= R2 Then
+                        pvAddPointWDist IJ, d
                     End If
                 Next
             End With
@@ -890,7 +900,7 @@ Friend Sub QueryPointsInCircle(cX As Double, cY As Double, R As Double, rdist() 
 End Sub
 
 
-Private Sub pvAddPointWDist(P1 As Long, D As Double)
+Private Sub pvAddPointWDist(P1 As Long, d As Double)
 
     Npairs = Npairs + 1
 
@@ -914,6 +924,6 @@ Private Sub pvAddPointWDist(P1 As Long, D As Double)
     'PairP2(Npairs) = P2
     'PairDX(Npairs) = dx
     'PairDY(Npairs) = dy
-    PairD(Npairs) = D
+    PairD(Npairs) = d
 
 End Sub
